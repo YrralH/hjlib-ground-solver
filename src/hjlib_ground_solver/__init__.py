@@ -1,0 +1,101 @@
+'''
+hjlib-ground-solver -- the ground 'solving' side extracted from monolith
+lib_dynamic_hvip/ground/. Estimate ground parameters / geometry from SMPL
+pillars, top-bottom keypoints, depth maps; recover 3D info from 2D HVIP.
+
+The ground 'use' side (reverse_project / transform / by_param) lives in
+hjlib-geometry. See docs/design/README.md.
+'''
+
+from hjlib_ground_solver.segment_area.cluster_feature import (
+    cluster_pixel_features,
+)
+from hjlib_ground_solver.segment_area.filter_depth_map_feature import (
+    get_pixel_features_of_depth_map,
+    filter_vertical_and_horizontal_features,
+)
+from hjlib_ground_solver.segment_area.get_depth_map_by_ground import (
+    get_depth_map_by_ground_tensor,
+    get_depth_map_by_ground_np,
+)
+from hjlib_ground_solver.segment_area.get_ground_by_depth_map import (
+    forward_ground_parameters_to_depth_map,
+    get_depth_map_loss,
+    get_ground_main_area_by_depth_map,
+    get_list_ground_area_by_depth_map,
+)
+
+from hjlib_ground_solver.get_ground_geometry.by_pillars import (
+    get_ground_by_pillars_on_the_ground,
+)
+from hjlib_ground_solver.get_ground_geometry.by_points import (
+    compute_plane_normal_by_positions,
+    compute_plane_parameters_by_positions_hj,
+    get_ground_by_points_on_the_ground_lstsq,
+    get_ground_by_points_on_the_ground,
+)
+from hjlib_ground_solver.get_ground_geometry.by_smpl import (
+    get_ground_by_smpls_on_the_ground,
+)
+from hjlib_ground_solver.get_ground_geometry.by_world_space import (
+    get_ground_geometry_in_world_space,
+)
+
+from hjlib_ground_solver.get_ground_param.by_world_space import (
+    get_ground_param_in_world_space,
+    get_ground_param_in_world_space_with_extrinsic,
+)
+
+from hjlib_ground_solver.hvip.get_3d_info_from_hvip_2d import (
+    get_3d_info_from_hvip_2d,
+)
+
+from hjlib_ground_solver.estimate_ground.by_kp_rcr.compute_KN_by_vertical_lines import (
+    get_KN,
+    get_bias_from_2D_ground_normal,
+    get_KN_with_filter,
+)
+from hjlib_ground_solver.estimate_ground.by_kp_rcr.solve_by_top_bot.project_loss import (
+    get_projection_loss,
+)
+from hjlib_ground_solver.estimate_ground.by_kp_rcr.solve_by_top_bot.search_D import (
+    uv_to_xyz_via_ground_torch,
+    solve_D_search,
+)
+from hjlib_ground_solver.estimate_ground.by_kp_rcr.solve_by_top_bot.process_solve_by_top_bot_given_K import (
+    solve_ground_param_by_top_bottom_given_K,
+)
+
+__all__ = [
+    # segment_area
+    'cluster_pixel_features',
+    'get_pixel_features_of_depth_map',
+    'filter_vertical_and_horizontal_features',
+    'get_depth_map_by_ground_tensor',
+    'get_depth_map_by_ground_np',
+    'forward_ground_parameters_to_depth_map',
+    'get_depth_map_loss',
+    'get_ground_main_area_by_depth_map',
+    'get_list_ground_area_by_depth_map',
+    # get_ground_geometry
+    'get_ground_by_pillars_on_the_ground',
+    'compute_plane_normal_by_positions',
+    'compute_plane_parameters_by_positions_hj',
+    'get_ground_by_points_on_the_ground_lstsq',
+    'get_ground_by_points_on_the_ground',
+    'get_ground_by_smpls_on_the_ground',
+    'get_ground_geometry_in_world_space',
+    # get_ground_param
+    'get_ground_param_in_world_space',
+    'get_ground_param_in_world_space_with_extrinsic',
+    # hvip
+    'get_3d_info_from_hvip_2d',
+    # estimate_ground
+    'get_KN',
+    'get_bias_from_2D_ground_normal',
+    'get_KN_with_filter',
+    'get_projection_loss',
+    'uv_to_xyz_via_ground_torch',
+    'solve_D_search',
+    'solve_ground_param_by_top_bottom_given_K',
+]

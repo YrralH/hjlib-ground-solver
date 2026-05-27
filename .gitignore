@@ -1,0 +1,13 @@
+# per-machine test config (never committed)
+test/local_setting_test.py
+
+# dataset / output content
+test_data/
+
+# python build artifacts
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+.pytest_cache/

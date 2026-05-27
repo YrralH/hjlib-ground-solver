@@ -1,0 +1,98 @@
+# 设计文档 —— hjlib-ground-solver
+
+本仓**唯一** onboarding 入口（无 `docs/CLAUDE.md`）。改本仓前先读这里。
+
+## 1. Scope
+
+**做什么**：地面的"求解 / 主动推断"侧 —— 从 SMPL pillars、top-bottom 关键点、
+深度图等观测推断地面参数 / 几何；并从 2D HVIP 反推 3D 信息（含其内部的地面现算）。
+
+**不做什么**：
+
+- 地面的"被动使用"（已知地面后的 reverse_project / transform / by_param 等）
+  → 在 [`hjlib-geometry`](../../../hjlib-geometry)（沿 DRU-7 use/solve 切分）。
+- `hvip/{get_hvip_by_linear, get_hvip_by_ray_cast}`（纯 use，输入已含 ground_parameters）
+  → 归 hjlib-geometry（DRU-10），本仓不 port，需要时从 hjlib-geometry import。
+- `for_fixed_camera_video_by_rcr.py`（Tier-2，耦合 monolith detection）→ 见
+  [handoff.md](handoff.md)（DRU-9），本次未迁。
+- SMPL forward / fitting：来自 hjlib-smpl。
+
+## 2. Repo layout
+
+```
+hjlib-ground-solver/
+├── README.md
+├── pyproject.toml              deps = hjlib-geometry + hjlib-smpl (+ numpy/torch/cv2/trimesh/scipy/sklearn)
+├── pyrightconfig.json          strict; 关掉 4 条 torch-stub 派生规则 (见 §4)
+├── .gitignore
+├── src/hjlib_ground_solver/
+│   ├── __init__.py             顶层 re-export 全部 public 函数
+│   ├── segment_area/
+│   │   ├── cluster_feature.py              cluster_pixel_features (k-means 像素聚类)
+│   │   ├── filter_depth_map_feature.py     深度图边缘特征 + 阈值过滤
+│   │   ├── get_depth_map_by_ground.py      地面参数 -> 深度图 (调 hjlib-geometry)
+│   │   └── get_ground_by_depth_map.py      深度图 -> 地面 (L-BFGS 已禁用, 见 DEAD-3)
+│   ├── get_ground_geometry/
+│   │   ├── by_pillars.py        起点+方向 pillars -> 地面 mesh
+│   │   ├── by_points.py         3D 点 -> 地面 mesh / 参数 (内联 utils, 见 §3)
+│   │   ├── by_smpl.py           SMPL verts -> 地面 mesh (调 hjlib-smpl + hjlib-geometry)
+│   │   └── by_world_space.py    世界系轴对齐地面 trimesh (原文件名 typo by_wolrd_space, 见 DIV-1)
+│   ├── get_ground_param/
+│   │   └── by_world_space.py    世界系/经 RT 的地面参数 (调 hjlib-geometry solve_ground_from_3_points)
+│   ├── hvip/
+│   │   └── get_3d_info_from_hvip_2d.py     2D HVIP + RT/K -> 3D world HVIP + 地面 (含 solve)
+│   └── estimate_ground/by_kp_rcr/
+│       ├── compute_KN_by_vertical_lines.py  竖直线消失点 KN + 过滤 (内联 3 个 utils)
+│       └── solve_by_top_bot/
+│           ├── project_loss.py               投影 loss (torch)
+│           ├── search_D.py                   grid-search 解地面距离 D
+│           └── process_solve_by_top_bot_given_K.py  顶层入口 solve_ground_param_by_top_bottom_given_K
+├── test_smoke/                 4 个 topic + master runner + clean_test_data
+├── test/                       数据依赖测试占位 (Phase 2 前主要落 hjlib-migration-tests)
+└── docs/{usage,design}/
+```
+
+## 3. 关键设计点
+
+- **port 风格 = file-mapping**：保留 monolith 文件级结构，逐文件小改（修 import +
+  清死 import + 内联小 utils）。逐条记录见 [migration.md](migration.md)。
+- **内联的 utils**（不开 `utils_*.py`，遵家族禁 utils-module 约定）：
+  - `by_points.py` 内联 `utils_py.get_valid_filter_mask_by_max_value`
+  - `compute_KN_by_vertical_lines.py` 内联 `utils_np.{assert_zeros, filter_column_vectors_by_list_valid_mask}`
+    + `utils_py.get_valid_filter_mask_by_max_value`
+- **跨仓边界**：本仓只直接 dep `hjlib-geometry` + `hjlib-smpl`；skeleton / camera /
+  vis-2d 作为 hjlib-smpl 的传递依赖在 env 里，但**不在** `[tool.hjlibm.deps]` 直接声明。
+
+## 4. Family conventions inherited
+
+- pyright strict 默认 —— [pyright-strict-default](../../../../.claude/projects/-data3-hj-home-hj-Repo-Code-as-Libs/memory/feedback_pyright_strict_default.md)
+- 字符串 percent-style 单引号 / 注释英文标点 / 4 空格缩进 / 禁 `utils_*.py` 命名
+  —— 见 `Code_as_Libs/CLAUDE.md` + family memory。
+- 测试两棵树（test_smoke + test）—— [test_layout.md](../../../hjlibm/docs/hjlib_standard/test_layout.md)，
+  本仓实例见 [test.md](test.md)。
+
+### pyright 配置说明
+
+`typeCheckingMode = 'strict'`，并关掉 4 条 torch/外部 stub 派生噪声规则
+（`reportMissingTypeStubs` / `reportUnknownMemberType` / `reportUnknownVariableType` /
+`reportUnknownArgumentType`）+ `reportPrivateImportUsage`，与
+[`hjlib-geometry`](../../../hjlib-geometry/pyrightconfig.json) 同模式。原因：torch /
+cv2 / trimesh / smplx 的弱 stub 会在几乎每个 numpy/torch 调用点产生 Unknown* 噪声，
+压垮真实 strict 信号。其余 strict 规则全开，0 errors。
+
+## 5. State of the world
+
+- pyright: **strict, 0 errors**（见 §4 的规则豁免）。
+- 测试: `test_smoke/` 16 cases 全绿（4 topic）；`get_ground_by_smpls_on_the_ground`
+  需真实 SMPL 模型，留给数据依赖测试（见 [test.md](test.md)）。
+- remote: <https://github.com/YrralH/hjlib-ground-solver>
+- deps: hjlib-geometry `269c7c21` + hjlib-smpl `62940b5c`（pin 于开仓，随 sibling
+  commit 落地用 `hjlibm version` bump）。
+
+## 6. What's open
+
+- **Phase 2 (parity + behavior)**：留给新 session 在 `hjlib-migration-tests/ground-solver/`
+  落地。本仓 migration.md 已建 Phase 1/2/3 checkbox。
+- **Tier-2 / DRU-9 / DRU-10**：见 [handoff.md](handoff.md)。
+- **`get_ground_by_smpls_on_the_ground` 数据测试**：需 SMPL_Full 模型，long-term pending，
+  待第一份真实 SMPL 序列可用（与 dataset-raw-uplift 链路相关）。
