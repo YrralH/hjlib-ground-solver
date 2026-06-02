@@ -2,7 +2,8 @@ from typing import List, Tuple
 
 import numpy as np
 
-from hjlib_smpl import SMPL_Full, get_rough_pillars_and_from_smpl_verts_batch
+from hjlib_smpl.smpl_full_54 import SMPL_Full
+from hjlib_smpl.skeleton_helpers import get_rough_pillars_and_from_smpl_verts_batch
 from hjlib_geometry import convert_ground_parameters_to_4_verts_mesh_with_on_ground_points
 
 from hjlib_ground_solver.get_ground_geometry.by_pillars import get_ground_by_pillars_on_the_ground

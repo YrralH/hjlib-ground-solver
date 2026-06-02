@@ -3,7 +3,7 @@ from typing import Tuple
 import numpy as np
 
 from hjlib_geometry import reverse_project_via_ground, assert_is_rotmat
-from hjlib_smpl import get_2d_torso_center_from_2d_joint
+from hjlib_smpl.skeleton_helpers import get_2d_torso_center_from_2d_joint
 
 from hjlib_ground_solver.get_ground_param.by_world_space import get_ground_param_in_world_space_with_extrinsic
 
