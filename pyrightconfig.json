@@ -5,6 +5,7 @@
         "test"
     ],
     "typeCheckingMode": "strict",
+    "reportImplicitOverride": "error",
     "pythonVersion": "3.12",
     "reportMissingTypeStubs":      "none",
     "reportPrivateImportUsage":    "none",
