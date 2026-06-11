@@ -23,7 +23,7 @@
 hjlib-ground-solver/
 ├── README.md
 ├── pyproject.toml              deps = hjlib-geometry + hjlib-smpl (+ numpy/torch/cv2/trimesh/scipy/sklearn)
-├── pyrightconfig.json          strict; 关掉 4 条 torch-stub 派生规则 (见 §4)
+├── pyrightconfig.json          strict; 关掉 5 条第三方 stub 噪声规则 (见 §4)
 ├── .gitignore
 ├── src/hjlib_ground_solver/
 │   ├── __init__.py             顶层 re-export 全部 public 函数
@@ -73,12 +73,13 @@ hjlib-ground-solver/
 
 ### pyright 配置说明
 
-`typeCheckingMode = 'strict'`，并关掉 4 条 torch/外部 stub 派生噪声规则
+`typeCheckingMode = 'strict'`，并关掉 5 条第三方 stub 噪声规则
 （`reportMissingTypeStubs` / `reportUnknownMemberType` / `reportUnknownVariableType` /
-`reportUnknownArgumentType`）+ `reportPrivateImportUsage`，与
-[`hjlib-geometry`](../../../hjlib-geometry/pyrightconfig.json) 同模式。原因：torch /
-cv2 / trimesh / smplx 的弱 stub 会在几乎每个 numpy/torch 调用点产生 Unknown* 噪声，
-压垮真实 strict 信号。其余 strict 规则全开，0 errors。
+`reportUnknownArgumentType` / `reportPrivateImportUsage`），即 family 标准的
+ladder level 3，根因与处理标准见
+[pyright_stub_noise.md](../../../hjlibm/docs/hjlib_standard/pyright_stub_noise.md)。
+本仓触发库：torch / cv2 / trimesh / smplx 的弱 stub 在几乎每个 numpy/torch
+调用点产生噪声，压垮真实 strict 信号。其余 strict 规则全开，0 errors。
 
 ## 5. State of the world
 
