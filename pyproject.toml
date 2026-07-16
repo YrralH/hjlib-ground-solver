@@ -29,5 +29,5 @@ testpaths = ['test_smoke', 'test']
 # hjlib-smpl: SMPL_Full + skeleton helpers (get_rough_pillars_and_from_smpl_verts_batch,
 #   get_2d_torso_center_from_2d_joint).
 # skeleton / camera / vis-2d remain transitive via hjlib-smpl; NOT declared directly here.
-hjlib-geometry = { path = '../hjlib-geometry', commit = "679faf7658bd3de69b9b1b00aa63f7c72beec7b6" }
-hjlib-smpl = { path = '../hjlib-smpl', commit = "20b56444d350cdee5ec86fc4d29a9d1bfdaca90f" }
+hjlib-geometry = { path = '../hjlib-geometry', commit = '68a8a2445cae18a39f96a3671d2b2c7850136990' }
+hjlib-smpl = { path = '../hjlib-smpl', commit = 'b10fa970b6d69fdf1a0f3a7d4539fbf132d25751' }

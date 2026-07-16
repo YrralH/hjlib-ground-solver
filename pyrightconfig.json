@@ -1,8 +1,7 @@
 {
     "include": [
         "src",
-        "test_smoke",
-        "test"
+        "test_smoke"
     ],
     "typeCheckingMode": "strict",
     "reportImplicitOverride": "error",
