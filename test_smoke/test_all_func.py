@@ -11,6 +11,7 @@ from test_ground_param_and_hvip import smoke_test_ground_param_and_hvip
 from test_estimate_ground import smoke_test_estimate_ground
 from test_mesh_lower_envelope import smoke_test_mesh_lower_envelope
 from test_mesh_lower_envelope_peeling import smoke_test_mesh_lower_envelope_peeling
+from test_static_foot_humor import smoke_test_static_foot_humor
 
 
 def main() -> None:
@@ -20,6 +21,7 @@ def main() -> None:
     smoke_test_estimate_ground()
     smoke_test_mesh_lower_envelope()
     smoke_test_mesh_lower_envelope_peeling()
+    smoke_test_static_foot_humor()
     print('[ALL OK] hjlib-ground-solver smoke tests')
 
 

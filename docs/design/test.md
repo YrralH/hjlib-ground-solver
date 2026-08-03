@@ -13,6 +13,7 @@ test_smoke/
 ├── test_estimate_ground.py         get_KN / get_bias / get_KN_with_filter / projection_loss / uv_to_xyz / solve_D_search / 顶层入口
 ├── test_mesh_lower_envelope.py     exact coverage / contamination / ties / run / reducer / re-export
 ├── test_mesh_lower_envelope_peeling.py  first eligible low-prefix / iteration / budgets / oracle
+├── test_static_foot_humor.py       literal upstream oracle / cluster priority / terrain / validation
 ├── test_all_func.py                master runner (import 各 smoke_test_*)
 └── clean_test_data.py              LIST_PATH_CLEAN (当前空, 全程 in-memory 无产物)
 ```
@@ -31,6 +32,10 @@ test_smoke/
     selection、fixed-slot empty reference、ties、round/removal equality 与 stop priority、
     temporal permutation、极端 finite 派生 overflow、immutable records、三级 re-export，
     以及 100 个 deterministic randomized series 对 repeated-sort oracle。
+  - static-foot HuMoR：float32/64 literal upstream oracle、strict displacement gate、
+    sub-threshold 位移不参与候选排序、left-before-right pooling、duplicate root frame
+    去重、pure/mixed noise、equal-median label tie、terrain 三重 strict boundary、
+    transform invariant、derived overflow、immutable records 与三级 re-export。
 
 运行：`pytest test_smoke/` 或 `python test_smoke/test_all_func.py`。
 

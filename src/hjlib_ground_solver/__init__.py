@@ -78,6 +78,14 @@ from hjlib_ground_solver.estimate_ground.by_mesh_lower_envelope_peeling import (
     Mesh_Lower_Envelope_Peeling_Status,
     peel_separated_mesh_lower_envelope_prefixes,
 )
+from hjlib_ground_solver.estimate_ground.by_static_foot_humor import (
+    Static_Foot_HuMoR_Cluster,
+    Static_Foot_HuMoR_Config,
+    Static_Foot_HuMoR_Result,
+    Static_Foot_HuMoR_Sample,
+    Static_Foot_HuMoR_Status,
+    estimate_static_foot_humor_baseline,
+)
 
 __all__ = [
     # segment_area
@@ -120,4 +128,10 @@ __all__ = [
     'Mesh_Lower_Envelope_Peeling_Result',
     'Mesh_Lower_Envelope_Peeling_Status',
     'peel_separated_mesh_lower_envelope_prefixes',
+    'Static_Foot_HuMoR_Cluster',
+    'Static_Foot_HuMoR_Config',
+    'Static_Foot_HuMoR_Result',
+    'Static_Foot_HuMoR_Sample',
+    'Static_Foot_HuMoR_Status',
+    'estimate_static_foot_humor_baseline',
 ]

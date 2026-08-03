@@ -6,6 +6,8 @@
 
 **做什么**：地面的"求解 / 主动推断"侧 —— 从 SMPL pillars、top-bottom 关键点、
 深度图等观测推断地面参数 / 几何；并从 2D HVIP 反推 3D 信息（含其内部的地面现算）。
+另外提供不声称 ground truth 的 full-mesh lower-envelope 与 static-foot
+height-cluster comparison candidates。
 
 **不做什么**：
 
@@ -44,6 +46,7 @@ hjlib-ground-solver/
 │   └── estimate_ground/
 │       ├── by_mesh_lower_envelope.py        full-mesh per-frame minima + exact coverage candidates
 │       ├── by_mesh_lower_envelope_peeling.py iterative separated low-prefix peeling
+│       ├── by_static_foot_humor.py          exact HuMoR static-foot height clustering
 │       └── by_kp_rcr/
 │           ├── compute_KN_by_vertical_lines.py  竖直线消失点 KN + 过滤 (内联 3 个 utils)
 │           └── solve_by_top_bot/
@@ -87,10 +90,10 @@ ladder level 3，根因与处理标准见
 ## 5. State of the world
 
 - pyright: **strict, 0 errors**（见 §4 的规则豁免）。
-- 测试: `test_smoke/` 31 cases 全绿（6 topic）；`get_ground_by_smpls_on_the_ground`
+- 测试: `test_smoke/` master 全绿；`get_ground_by_smpls_on_the_ground`
   需真实 SMPL 模型，留给数据依赖测试（见 [test.md](test.md)）。
 - remote: <https://github.com/YrralH/hjlib-ground-solver>
-- deps: hjlib-geometry `fe58e07c` + hjlib-smpl `57968aca`（当前 pyproject pin，随 sibling
+- deps: hjlib-geometry `fe58e07c` + hjlib-smpl `64f4f49b`（当前 pyproject pin，随 sibling
   commit 落地用 `hjlibm version` bump）。
 
 ## 6. What's open
@@ -104,6 +107,11 @@ ladder level 3，根因与处理标准见
   Mathematical and Code Architecture plus final logic/implementation/consistency
   closure are independently reviewed; public core, synthetic smoke, and
   authoritative bounded AMASS v3 evidence are complete.
+- **AMASS static-foot HuMoR baseline**: the reviewed Layered Design residence is
+  [`tasks/amass-ground-static-foot-humor-baseline/`](tasks/amass-ground-static-foot-humor-baseline/).
+  The reusable exact comparator, immutable evidence records, synthetic oracle
+  smoke, and public exports are implemented; the configured AMASS operation
+  and bounded visual artifact remain in `hjlib-dataset-raw`.
 - **Phase 2 (parity + behavior)**：留给新 session 在 `hjlib-migration-tests/ground-solver/`
   落地。本仓 migration.md 已建 Phase 1/2/3 checkbox。
 - **Tier-2 / DRU-9 / DRU-10**：见 [handoff.md](handoff.md)。

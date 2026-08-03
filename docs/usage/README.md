@@ -35,6 +35,11 @@
        -> 迭代剥离局部分离的最低 value-prefix；过多轮次/移除量显式 unstable
        (注意: candidate 不是 semantic ground / ground truth)
 
+我有 native-rate +Z-up 的 root / left-toe / right-toe 3D tracks
+    └─ estimate_static_foot_humor_baseline
+       -> 精确 HuMoR static-foot height-cluster comparator + 完整证据
+       (注意: displacement 只是宽松候选门；cluster 才决定高度)
+
 我有一张深度图 + 相机 K
     ├─ get_pixel_features_of_depth_map -> filter_vertical_and_horizontal_features  (边缘特征)
     ├─ cluster_pixel_features                                                       (像素聚类)
@@ -129,6 +134,33 @@ gap-ratio 的 prefix 被整组剥离，ties 不拆分，然后重复。
 手/膝/躺姿接触、楼梯或平台；输出仍是 outlier-peeled lower-envelope candidate，
 不是 semantic ground。
 
+### Static-foot HuMoR baseline
+
+```python
+from hjlib_ground_solver import estimate_static_foot_humor_baseline
+
+result = estimate_static_foot_humor_baseline(
+    root_position_in_meter=root,            # (T, 3), float32/float64, finite
+    left_toe_position_in_meter=left_toe,    # same dtype/shape, +Z up
+    right_toe_position_in_meter=right_toe,
+    frame_rate_in_hz=120.0,
+)
+```
+
+这是钉在 HuMoR commit `fc6ef84f...` 的精确比较器，调用方不能调阈值。它先以
+strict `< 0.005 m/native-frame` 排除粗大运动，再对保留的左脚趾、右脚趾高度
+合并运行一维 DBSCAN。候选高度取最低 label median 减 `0.01 m`。因此：
+
+- 逐帧位移只决定样本能否进入聚类，不排序已保留样本；
+- 精确 parity 故意保留 DBSCAN `-1` noise 被当成一个普通 cluster 的上游缺陷；
+- `upstream_zero_fallback` 与 `upstream_terrain_rejection` 的
+  `accepted_candidate_height_in_meter` 都是 `None`；
+- `upstream_candidate` 也只表示未被上游规则拒绝，不是 AMASS 官方 ground truth。
+
+`samples` 保留 left-before-right 顺序、native frame index、height 和 label；
+`clusters` 保留去重 root frames、两种 median、sample count、selected/terrain 证据。
+该结果可直接 `dataclasses.asdict`，但不含 body-model joint index 或 AMASS 路径语义。
+
 ## 常见坑
 
 - `solve_ground_param_by_top_bottom_given_K(flag_opt=True)` 会 `raise NotImplementedError`
@@ -141,3 +173,5 @@ gap-ratio 的 prefix 被整组剥离，ties 不拆分，然后重复。
   隐藏坏 vertex。`retained_coverages` 必须是唯一 Python `float` tuple 且含 `1.0`。
 - peeling 的两个 fraction 是 exact decimal string；短序列的 effective total budget
   可以 floor 到 0，此时检测到的第一组会以 unstable removal-budget 返回，不会应用。
+- static-foot HuMoR 的 `0.005` 是每 native frame 位移，不是 m/s；不要在调用前
+  默默重采样或按 FPS 归一化，否则就不再是这个 exact baseline。
