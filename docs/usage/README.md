@@ -28,6 +28,13 @@
     └─ get_ground_by_smpls_on_the_ground         -> 地面 mesh
        (策略: smpl_direction_maxmin / normal_direction_maxmin / normal_direction_lstsq)
 
+我有一段已实现 full-body mesh vertices，想检查最低包络
+    ├─ compute_per_frame_mesh_minimum_height      -> 每帧一个最低高度
+    ├─ summarize_mesh_lower_envelope              -> absolute + retained-coverage candidates
+    └─ peel_separated_mesh_lower_envelope_prefixes
+       -> 迭代剥离局部分离的最低 value-prefix；过多轮次/移除量显式 unstable
+       (注意: candidate 不是 semantic ground / ground truth)
+
 我有一张深度图 + 相机 K
     ├─ get_pixel_features_of_depth_map -> filter_vertical_and_horizontal_features  (边缘特征)
     ├─ cluster_pixel_features                                                       (像素聚类)
@@ -52,6 +59,76 @@
   （`get_ground_geometry_in_world_space` 例外，直接返回 `trimesh.Trimesh`）。
 - 像素坐标统一 `(u, v)`；齐次列向量约定 `(3, N)` 每列 `[u, v, 1]`（estimate_ground 内部）。
 
+### Mesh lower envelope
+
+```python
+from hjlib_ground_solver import (
+    compute_per_frame_mesh_minimum_height,
+    summarize_mesh_lower_envelope,
+)
+
+per_frame_minimum = compute_per_frame_mesh_minimum_height(
+    vertices,          # floating torch.Tensor, (B, V, 3), finite
+    up_axis_index=2,
+)
+summary = summarize_mesh_lower_envelope(
+    per_frame_minimum.detach().cpu().numpy(),
+    retained_coverages=(1.0, 0.999, 0.995, 0.99),
+    frame_rate_in_hz=120.0,
+)
+```
+
+对 `T` 帧、coverage `c`，结果使用离散 order statistic：
+`d = T - ceil(c*T)`、`E_c = sorted(m)[d]`。coverage 计数通过
+`Decimal(str(c))` 计算，不做插值；短序列若 `d == 0`，该行就与 absolute
+minimum 相同。每行同时给出相对 absolute minimum 的 delta、实际 retained
+fraction 和 strict-below 最长连续段。
+
+该 API 不做 body-model forward、不复制整段 mesh 到 CPU、不推断 contact，也不把
+输出分类为 ground plane。调用方负责 mesh realization 与 semantic acceptance。
+
+### Mesh lower-envelope low-prefix peeling
+
+```python
+from hjlib_ground_solver import (
+    Mesh_Lower_Envelope_Peeling_Config,
+    peel_separated_mesh_lower_envelope_prefixes,
+)
+
+config = Mesh_Lower_Envelope_Peeling_Config(
+    maximum_candidate_fraction_per_round_decimal='0.02',
+    maximum_candidate_frame_count_per_round=24,
+    minimum_retained_frame_count=32,
+    reference_gap_window_size=32,
+    minimum_boundary_gap_in_meter=0.001,
+    minimum_gap_ratio=5.0,
+    maximum_round_count=3,
+    maximum_total_removed_fraction_decimal='0.05',
+    maximum_total_removed_frame_count=60,
+)
+result = peel_separated_mesh_lower_envelope_prefixes(
+    per_frame_minimum_height_in_meter,
+    config,
+    frame_rate_in_hz=120.0,
+)
+```
+
+该方法对高度与原始 frame index 做一次 lexsort，然后从当前最低值开始按 prefix
+长度递增检查 boundary gap。reference 是 boundary 上方固定 `w` 个 gap slot 中的
+正 gap 中位数；不会越过 slot window 搜集正 gap。第一个同时通过 absolute gap 与
+gap-ratio 的 prefix 被整组剥离，ties 不拆分，然后重复。
+
+只有 `status == 'stable_candidate'` 时
+`accepted_candidate_height_in_meter` 才非 `None`。若下一轮仍有 eligible prefix，
+但已达到 `maximum_round_count` 或总移除 budget，结果分别为
+`unstable_maximum_round_count` / `unstable_removal_budget`，proposal 被记录但不应用。
+每个 applied/blocked proposal 携带 native frame indices、gap/reference/ratio 与最长
+连续 run，便于诊断与可视化。
+
+这不是概率检验或通用离群算法。它无法仅凭 scalar heights 区分 penetration、有效
+手/膝/躺姿接触、楼梯或平台；输出仍是 outlier-peeled lower-envelope candidate，
+不是 semantic ground。
+
 ## 常见坑
 
 - `solve_ground_param_by_top_bottom_given_K(flag_opt=True)` 会 `raise NotImplementedError`
@@ -60,3 +137,7 @@
   地面过世界原点）；若相机/地面约定不符会触发 assert。
 - depth-map 系列函数依赖 hjlib-geometry 的 `get_depth_of_points_via_ground`；
   `get_ground_main_area_by_depth_map` 当前等价于返回硬编码初值（refinement 被禁用）。
+- lower-envelope reducer 会拒绝任意坐标中的 NaN/Inf；不能靠某一轴上的有限最小值
+  隐藏坏 vertex。`retained_coverages` 必须是唯一 Python `float` tuple 且含 `1.0`。
+- peeling 的两个 fraction 是 exact decimal string；短序列的 effective total budget
+  可以 floor 到 0，此时检测到的第一组会以 unstable removal-budget 返回，不会应用。

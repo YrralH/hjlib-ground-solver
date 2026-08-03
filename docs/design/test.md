@@ -11,6 +11,8 @@ test_smoke/
 ├── test_ground_geometry.py         by_pillars / by_points / plane fits / world_space geometry
 ├── test_ground_param_and_hvip.py   get_ground_param_in_world_space(_with_extrinsic) / get_3d_info_from_hvip_2d
 ├── test_estimate_ground.py         get_KN / get_bias / get_KN_with_filter / projection_loss / uv_to_xyz / solve_D_search / 顶层入口
+├── test_mesh_lower_envelope.py     exact coverage / contamination / ties / run / reducer / re-export
+├── test_mesh_lower_envelope_peeling.py  first eligible low-prefix / iteration / budgets / oracle
 ├── test_all_func.py                master runner (import 各 smoke_test_*)
 └── clean_test_data.py              LIST_PATH_CLEAN (当前空, 全程 in-memory 无产物)
 ```
@@ -22,6 +24,13 @@ test_smoke/
   - estimate_ground / hvip：构造"相机俯视 `z=0` 地面"的 RT + K，把站立行人的
     top/bottom 3D 点投影到 2D（**加 ~1.5px 抖动**，否则消失点过滤会因 bias 全相等而清空）。
     `get_3d_info_from_hvip_2d` 用主点像素 → 反投影回世界原点，断言 `z≈0`。
+  - mesh lower envelope：合成 `(B,V,3)` torch mesh 与 `T=1000` contamination
+    oracle；覆盖 exact Decimal discard count、short-sequence 离散边界、ties、连续/
+    稀疏低尾、autograd、dtype/device、输入不变和三级 public re-export。
+  - mesh lower-envelope peeling：isolated/tied/two-group low prefixes、first-eligible
+    selection、fixed-slot empty reference、ties、round/removal equality 与 stop priority、
+    temporal permutation、极端 finite 派生 overflow、immutable records、三级 re-export，
+    以及 100 个 deterministic randomized series 对 repeated-sort oracle。
 
 运行：`pytest test_smoke/` 或 `python test_smoke/test_all_func.py`。
 

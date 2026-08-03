@@ -65,6 +65,19 @@ from hjlib_ground_solver.estimate_ground.by_kp_rcr.solve_by_top_bot.search_D imp
 from hjlib_ground_solver.estimate_ground.by_kp_rcr.solve_by_top_bot.process_solve_by_top_bot_given_K import (
     solve_ground_param_by_top_bottom_given_K,
 )
+from hjlib_ground_solver.estimate_ground.by_mesh_lower_envelope import (
+    Mesh_Lower_Envelope_Candidate,
+    Mesh_Lower_Envelope_Summary,
+    compute_per_frame_mesh_minimum_height,
+    summarize_mesh_lower_envelope,
+)
+from hjlib_ground_solver.estimate_ground.by_mesh_lower_envelope_peeling import (
+    Mesh_Lower_Envelope_Peel_Proposal,
+    Mesh_Lower_Envelope_Peeling_Config,
+    Mesh_Lower_Envelope_Peeling_Result,
+    Mesh_Lower_Envelope_Peeling_Status,
+    peel_separated_mesh_lower_envelope_prefixes,
+)
 
 __all__ = [
     # segment_area
@@ -98,4 +111,13 @@ __all__ = [
     'uv_to_xyz_via_ground_torch',
     'solve_D_search',
     'solve_ground_param_by_top_bottom_given_K',
+    'Mesh_Lower_Envelope_Candidate',
+    'Mesh_Lower_Envelope_Summary',
+    'compute_per_frame_mesh_minimum_height',
+    'summarize_mesh_lower_envelope',
+    'Mesh_Lower_Envelope_Peel_Proposal',
+    'Mesh_Lower_Envelope_Peeling_Config',
+    'Mesh_Lower_Envelope_Peeling_Result',
+    'Mesh_Lower_Envelope_Peeling_Status',
+    'peel_separated_mesh_lower_envelope_prefixes',
 ]

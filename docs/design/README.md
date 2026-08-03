@@ -41,13 +41,16 @@ hjlib-ground-solver/
 │   │   └── by_world_space.py    世界系/经 RT 的地面参数 (调 hjlib-geometry solve_ground_from_3_points)
 │   ├── hvip/
 │   │   └── get_3d_info_from_hvip_2d.py     2D HVIP + RT/K -> 3D world HVIP + 地面 (含 solve)
-│   └── estimate_ground/by_kp_rcr/
-│       ├── compute_KN_by_vertical_lines.py  竖直线消失点 KN + 过滤 (内联 3 个 utils)
-│       └── solve_by_top_bot/
-│           ├── project_loss.py               投影 loss (torch)
-│           ├── search_D.py                   grid-search 解地面距离 D
-│           └── process_solve_by_top_bot_given_K.py  顶层入口 solve_ground_param_by_top_bottom_given_K
-├── test_smoke/                 4 个 topic + master runner + clean_test_data
+│   └── estimate_ground/
+│       ├── by_mesh_lower_envelope.py        full-mesh per-frame minima + exact coverage candidates
+│       ├── by_mesh_lower_envelope_peeling.py iterative separated low-prefix peeling
+│       └── by_kp_rcr/
+│           ├── compute_KN_by_vertical_lines.py  竖直线消失点 KN + 过滤 (内联 3 个 utils)
+│           └── solve_by_top_bot/
+│               ├── project_loss.py               投影 loss (torch)
+│               ├── search_D.py                   grid-search 解地面距离 D
+│               └── process_solve_by_top_bot_given_K.py  顶层入口 solve_ground_param_by_top_bottom_given_K
+├── test_smoke/                 6 个 topic + master runner + clean_test_data
 ├── test/                       数据依赖测试占位 (Phase 2 前主要落 hjlib-migration-tests)
 └── docs/{usage,design}/
 ```
@@ -84,14 +87,23 @@ ladder level 3，根因与处理标准见
 ## 5. State of the world
 
 - pyright: **strict, 0 errors**（见 §4 的规则豁免）。
-- 测试: `test_smoke/` 16 cases 全绿（4 topic）；`get_ground_by_smpls_on_the_ground`
+- 测试: `test_smoke/` 31 cases 全绿（6 topic）；`get_ground_by_smpls_on_the_ground`
   需真实 SMPL 模型，留给数据依赖测试（见 [test.md](test.md)）。
 - remote: <https://github.com/YrralH/hjlib-ground-solver>
-- deps: hjlib-geometry `269c7c21` + hjlib-smpl `62940b5c`（pin 于开仓，随 sibling
+- deps: hjlib-geometry `fe58e07c` + hjlib-smpl `57968aca`（当前 pyproject pin，随 sibling
   commit 落地用 `hjlibm version` bump）。
 
 ## 6. What's open
 
+- **AMASS mesh lower-envelope task**: the implemented/reviewed Layered Design residence is
+  [`tasks/amass-ground-zmin-family/`](tasks/amass-ground-zmin-family/). It owns
+  the reusable zmin/retained-coverage core; AMASS reading and configured
+  operation orchestration remain outside this package's public API.
+- **AMASS zmin outlier-peeling task**: the implemented/reviewed Layered Design residence is
+  [`tasks/amass-ground-zmin-outlier-peeling/`](tasks/amass-ground-zmin-outlier-peeling/).
+  Mathematical and Code Architecture plus final logic/implementation/consistency
+  closure are independently reviewed; public core, synthetic smoke, and
+  authoritative bounded AMASS v3 evidence are complete.
 - **Phase 2 (parity + behavior)**：留给新 session 在 `hjlib-migration-tests/ground-solver/`
   落地。本仓 migration.md 已建 Phase 1/2/3 checkbox。
 - **Tier-2 / DRU-9 / DRU-10**：见 [handoff.md](handoff.md)。

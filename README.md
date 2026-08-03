@@ -1,11 +1,13 @@
 # hjlib-ground-solver
 
 地面"求解"侧（the ground *solving* side）：从 SMPL pillars / top-bottom 关键点 /
-深度图等输入**主动推断**地面参数与几何，并从 2D HVIP 反推 3D 信息。从 monolith
+深度图等输入**主动推断**地面参数与几何，也提供 full-mesh lower-envelope candidate
+统计，并从 2D HVIP 反推 3D 信息。从 monolith
 `lib_dynamic_hvip/ground/` 的 solver 子树迁出（file-mapping port）。
 
 与 [`hjlib-geometry`](../hjlib-geometry) 的边界：地面的**被动使用**（reverse_project /
 transform / by_param 等已知地面后的操作）在 hjlib-geometry；本仓只装**求解**侧。
+Lower-envelope candidate 只是观测统计，不单独声称 semantic ground。
 
 ## 安装
 
