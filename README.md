@@ -7,8 +7,8 @@
 
 与 [`hjlib-geometry`](../hjlib-geometry) 的边界：地面的**被动使用**（reverse_project /
 transform / by_param 等已知地面后的操作）在 hjlib-geometry；本仓只装**求解**侧。
-Lower-envelope / static-foot candidate 只是观测统计，不单独声称
-semantic ground。
+Lower-envelope / static-foot candidate 只是观测统计；另有显式标为
+`hj_derived_nonofficial` 的 plantar-zmin 地面高度代理，均不声称官方 ground truth。
 
 ## 安装
 

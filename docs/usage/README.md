@@ -4,7 +4,10 @@
 
 ## 一句话索引
 
-本仓只有一个 usage 维度（按输入类型选求解入口），故不拆子页，全部列在本页。
+- [vertex_subset_observation.md](vertex_subset_observation.md)：对显式局部 mesh indices 做可分块高度与 median speed 观测。
+- [static_foot_plantar_humor.md](static_foot_plantar_humor.md)：在共同 plantar 高度/速度域上做 HuMoR-style phase-1 聚类。
+- [hj_derived_plantar_zmin.md](hj_derived_plantar_zmin.md)：从左右 plantar 高度取明确非官方的 HJ-derived zmin 地面代理。
+- 其余 ground solver 入口按输入类型列在本页。
 
 ## 决策树：我有什么 → 调哪个
 
@@ -35,10 +38,25 @@
        -> 迭代剥离局部分离的最低 value-prefix；过多轮次/移除量显式 unstable
        (注意: candidate 不是 semantic ground / ground truth)
 
+我有一段 mesh vertices + 明确的局部 vertex indices（例如脚掌）
+    └─ compute_vertex_subset_observation_chunk
+       -> chunkable 每帧最低高度 + interval median per-vertex speed + owned carry
+       (topology 不在本仓；脚掌 indices 由 hjlib-smpl.foot_support 负责)
+
 我有 native-rate +Z-up 的 root / left-toe / right-toe 3D tracks
     └─ estimate_static_foot_humor_baseline
        -> 精确 HuMoR static-foot height-cluster comparator + 完整证据
        (注意: displacement 只是宽松候选门；cluster 才决定高度)
+
+我有 left/right plantar minimum height (T) + interval median speed (T-1)
+    └─ estimate_static_foot_plantar_humor_baseline
+       -> physical-speed gate + non-noise 1D DBSCAN + cluster span evidence
+       (共同域比较 baseline；不是最终 robust/ground truth)
+
+我有 left/right plantar minimum height (T)，决定使用非官方 absolute zmin
+    └─ estimate_hj_derived_plantar_zmin_ground
+       -> frozen HJ-derived nonofficial height + selected side/track-frame evidence
+       (不推断 contact；不是 AMASS 官方 ground)
 
 我有一张深度图 + 相机 K
     ├─ get_pixel_features_of_depth_map -> filter_vertical_and_horizontal_features  (边缘特征)
@@ -160,6 +178,13 @@ strict `< 0.005 m/native-frame` 排除粗大运动，再对保留的左脚趾、
 `samples` 保留 left-before-right 顺序、native frame index、height 和 label；
 `clusters` 保留去重 root frames、两种 median、sample count、selected/terrain 证据。
 该结果可直接 `dataclasses.asdict`，但不含 body-model joint index 或 AMASS 路径语义。
+
+### Static-foot plantar HuMoR baseline
+
+共同 plantar-domain 的调用与两种 static-foot API 选择见
+[static_foot_plantar_humor.md](static_foot_plantar_humor.md)。它使用 m/s 速度门、
+排除 DBSCAN noise、取消 toe offset，并暴露 cluster span/gap；不要把它与上面的
+精确历史 comparator 混为同一算法。
 
 ## 常见坑
 

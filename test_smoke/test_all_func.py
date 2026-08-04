@@ -12,6 +12,9 @@ from test_estimate_ground import smoke_test_estimate_ground
 from test_mesh_lower_envelope import smoke_test_mesh_lower_envelope
 from test_mesh_lower_envelope_peeling import smoke_test_mesh_lower_envelope_peeling
 from test_static_foot_humor import smoke_test_static_foot_humor
+from test_vertex_subset_observation import smoke_test_vertex_subset_observation
+from test_static_foot_plantar_humor import smoke_test_static_foot_plantar_humor
+from test_hj_derived_plantar_zmin import smoke_test_hj_derived_plantar_zmin
 
 
 def main() -> None:
@@ -22,6 +25,11 @@ def main() -> None:
     smoke_test_mesh_lower_envelope()
     smoke_test_mesh_lower_envelope_peeling()
     smoke_test_static_foot_humor()
+    smoke_test_vertex_subset_observation()
+    smoke_test_static_foot_plantar_humor()
+    print('[OK] static_foot_plantar_humor')
+    smoke_test_hj_derived_plantar_zmin()
+    print('[OK] hj_derived_plantar_zmin')
     print('[ALL OK] hjlib-ground-solver smoke tests')
 
 

@@ -5,7 +5,7 @@ build-backend = 'hatchling.build'
 [project]
 name = 'hjlib-ground-solver'
 version = '0.1.0'
-description = 'Ground-plane solving side: estimate parameters, geometry, and mesh lower-envelope candidates from body, keypoint, and depth observations.'
+description = 'Ground-plane solving and derived ground-height estimation from body, keypoint, mesh, and depth observations.'
 requires-python = '>=3.12'
 dependencies = [
     'numpy',
@@ -23,7 +23,7 @@ packages = ['src/hjlib_ground_solver']
 testpaths = ['test_smoke', 'test']
 
 [tool.hjlibm]
-description_updated = '2026-08-03'
+description_updated = '2026-08-04'
 
 [tool.hjlibm.deps]
 # Active runtime deps after dead-import cleanup (verified 2026-05-27, see docs/design/migration.md).
@@ -33,4 +33,4 @@ description_updated = '2026-08-03'
 #   get_2d_torso_center_from_2d_joint).
 # skeleton / camera / vis-2d remain transitive via hjlib-smpl; NOT declared directly here.
 hjlib-geometry = { path = '../hjlib-geometry', commit = 'fe58e07c43bad7a7644feba3661e80a7db7ad9f3' }
-hjlib-smpl = { path = '../hjlib-smpl', commit = '64f4f49bbb2c81ef5fdfd5ec723291d65ab706e9' }
+hjlib-smpl = { path = '../hjlib-smpl', commit = '45a990d82d7f9091485a76c9bd11186ab4cc23f7' }

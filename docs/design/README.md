@@ -6,8 +6,9 @@
 
 **做什么**：地面的"求解 / 主动推断"侧 —— 从 SMPL pillars、top-bottom 关键点、
 深度图等观测推断地面参数 / 几何；并从 2D HVIP 反推 3D 信息（含其内部的地面现算）。
-另外提供不声称 ground truth 的 full-mesh lower-envelope 与 static-foot
-height-cluster comparison candidates。
+另外提供不声称 ground truth 的 full-mesh / vertex-subset observation、
+static-foot comparison candidates，以及 provenance 固定为
+`hj_derived_nonofficial` 的 plantar-zmin 高度代理。
 
 **不做什么**：
 
@@ -47,13 +48,16 @@ hjlib-ground-solver/
 │       ├── by_mesh_lower_envelope.py        full-mesh per-frame minima + exact coverage candidates
 │       ├── by_mesh_lower_envelope_peeling.py iterative separated low-prefix peeling
 │       ├── by_static_foot_humor.py          exact HuMoR static-foot height clustering
+│       ├── by_vertex_subset_observation.py  chunkable local-vertex height/speed tracks
+│       ├── by_static_foot_plantar_humor.py  common-domain plantar HuMoR-style comparator
+│       ├── by_hj_derived_plantar_zmin.py    explicitly nonofficial absolute plantar zmin
 │       └── by_kp_rcr/
 │           ├── compute_KN_by_vertical_lines.py  竖直线消失点 KN + 过滤 (内联 3 个 utils)
 │           └── solve_by_top_bot/
 │               ├── project_loss.py               投影 loss (torch)
 │               ├── search_D.py                   grid-search 解地面距离 D
 │               └── process_solve_by_top_bot_given_K.py  顶层入口 solve_ground_param_by_top_bottom_given_K
-├── test_smoke/                 6 个 topic + master runner + clean_test_data
+├── test_smoke/                 topic smoke + master runner + clean_test_data
 ├── test/                       数据依赖测试占位 (Phase 2 前主要落 hjlib-migration-tests)
 └── docs/{usage,design}/
 ```
@@ -112,6 +116,24 @@ ladder level 3，根因与处理标准见
   The reusable exact comparator, immutable evidence records, synthetic oracle
   smoke, and public exports are implemented; the configured AMASS operation
   and bounded visual artifact remain in `hjlib-dataset-raw`.
+- **AMASS foot-sole domain and lower envelope**: the completed Layered Design
+  residence is
+  [`tasks/amass-ground-foot-sole-domain/`](tasks/amass-ground-foot-sole-domain/).
+  It puts lower-envelope and future robust static-foot work on one plantar
+  heel/mid-foot/toe observation domain while preserving historical full-mesh
+  and exact-HuMoR comparators. Public subset observation, SMPL-H/SMPL-X mask
+  composition, synthetic/model-backed tests, and raw post-review v5 evidence
+  are complete; 3/5 mm masks pass to the separate robust-contact task.
+- **AMASS static-foot robust**: phase 1 is implemented/reviewed at
+  [`tasks/amass-ground-static-foot-robust/`](tasks/amass-ground-static-foot-robust/).
+  It adds a common-domain plantar-HuMoR baseline with physical-speed gating,
+  non-noise DBSCAN selection, and explicit cluster compactness evidence. Raw v7
+  shows broad 21--69 mm selected spans, so final compactness/temporal and
+  multilevel/unknown semantics remain open.
+- **AMASS HJ-derived plantar zmin ground**: the active Layered Design residence
+  is [`tasks/amass-ground-hj-derived-plantar-zmin/`](tasks/amass-ground-hj-derived-plantar-zmin/).
+  It turns the user-selected plantar zmin proxy into an explicitly HJ-derived,
+  nonofficial public result; implementation is gated on layer review.
 - **Phase 2 (parity + behavior)**：留给新 session 在 `hjlib-migration-tests/ground-solver/`
   落地。本仓 migration.md 已建 Phase 1/2/3 checkbox。
 - **Tier-2 / DRU-9 / DRU-10**：见 [handoff.md](handoff.md)。

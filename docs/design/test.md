@@ -14,6 +14,9 @@ test_smoke/
 ├── test_mesh_lower_envelope.py     exact coverage / contamination / ties / run / reducer / re-export
 ├── test_mesh_lower_envelope_peeling.py  first eligible low-prefix / iteration / budgets / oracle
 ├── test_static_foot_humor.py       literal upstream oracle / cluster priority / terrain / validation
+├── test_static_foot_plantar_humor.py physical-speed gate / noise exclusion / span / validation
+├── test_hj_derived_plantar_zmin.py explicit nonofficial provenance / zmin ties / validation
+├── test_vertex_subset_observation.py chunk equality / union / median / carry / autograd / overflow
 ├── test_all_func.py                master runner (import 各 smoke_test_*)
 └── clean_test_data.py              LIST_PATH_CLEAN (当前空, 全程 in-memory 无产物)
 ```
@@ -36,6 +39,14 @@ test_smoke/
     sub-threshold 位移不参与候选排序、left-before-right pooling、duplicate root frame
     去重、pure/mixed noise、equal-median label tie、terrain 三重 strict boundary、
     transform invariant、derived overflow、immutable records 与三级 re-export。
+  - static-foot plantar HuMoR：strict physical-speed gate、terminal interval
+    repeat、left-before-right pooling、noise-only/no-contact statuses、最低 median、
+    density-chain span/gap、boundary-safe vertical shift、immutable records、输入不变、
+    validation 与三级 re-export。
+  - vertex-subset observation：hand oracle、odd/even median、single-frame、整段与
+    两 chunk + carry exact equality、左右 union height、float32/64、CPU/CUDA、
+    autograd（含 previous carry）、input/storage independence、derived overflow、
+    deterministic repeat 与三级 re-export。
 
 运行：`pytest test_smoke/` 或 `python test_smoke/test_all_func.py`。
 
