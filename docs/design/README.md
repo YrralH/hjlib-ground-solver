@@ -26,7 +26,7 @@ static-foot comparison candidates，以及 provenance 固定为
 hjlib-ground-solver/
 ├── README.md
 ├── pyproject.toml              deps = hjlib-geometry + hjlib-smpl (+ numpy/torch/cv2/trimesh/scipy/sklearn)
-├── pyrightconfig.json          strict; 关掉 5 条第三方 stub 噪声规则 (见 §4)
+├── pyrightconfig.json          strict; 关掉 5 条第三方 stub 噪声规则 (见 Family conventions)
 ├── .gitignore
 ├── src/hjlib_ground_solver/
 │   ├── __init__.py             顶层 re-export 全部 public 函数
@@ -45,6 +45,7 @@ hjlib-ground-solver/
 │   ├── hvip/
 │   │   └── get_3d_info_from_hvip_2d.py     2D HVIP + RT/K -> 3D world HVIP + 地面 (含 solve)
 │   └── estimate_ground/
+│       ├── observation_density.py              provisional-plane exact-LOO KDE / kNN density + immutable weight evidence
 │       ├── by_mesh_lower_envelope.py        full-mesh per-frame minima + exact coverage candidates
 │       ├── by_mesh_lower_envelope_peeling.py iterative separated low-prefix peeling
 │       ├── by_static_foot_humor.py          exact HuMoR static-foot height clustering
@@ -53,6 +54,7 @@ hjlib-ground-solver/
 │       ├── by_hj_derived_plantar_zmin.py    explicitly nonofficial absolute plantar zmin
 │       └── by_kp_rcr/
 │           ├── compute_KN_by_vertical_lines.py  竖直线消失点 KN + 过滤 (内联 3 个 utils)
+│           ├── observation_weight.py            optional NumPy/torch positive-weight boundary validation
 │           └── solve_by_top_bot/
 │               ├── project_loss.py               投影 loss (torch)
 │               ├── search_D.py                   grid-search 解地面距离 D
@@ -62,7 +64,14 @@ hjlib-ground-solver/
 └── docs/{usage,design}/
 ```
 
-## 3. 关键设计点
+## 3. Must-read
+
+1. [migration.md](migration.md) —— monolith file mapping、intentional divergence 与 migration status。
+2. [observation_density.md](observation_density.md) —— density IR、weighted RCR 与 owner boundary。
+3. [test.md](test.md) —— portable/data-dependent 两棵测试树在本仓的实例。
+4. [handoff.md](handoff.md) —— deferred Tier-2 与跨仓 handoff。
+
+## 4. 关键设计点
 
 - **port 风格 = file-mapping**：保留 monolith 文件级结构，逐文件小改（修 import +
   清死 import + 内联小 utils）。逐条记录见 [migration.md](migration.md)。
@@ -72,10 +81,13 @@ hjlib-ground-solver/
     + `utils_py.get_valid_filter_mask_by_max_value`
 - **跨仓边界**：本仓只直接 dep `hjlib-geometry` + `hjlib-smpl`；skeleton / camera /
   vis-2d 作为 hjlib-smpl 的传递依赖在 env 里，但**不在** `[tool.hjlibm.deps]` 直接声明。
+- **density-balanced RCR**：method-neutral provisional-plane density、immutable
+  intermediate 与 weighted solver contract 见
+  [observation_density.md](observation_density.md)。dataset selection 与结果评估不进本仓。
 
-## 4. Family conventions inherited
+## 5. Family conventions inherited
 
-- pyright strict 默认 —— [pyright-strict-default](../../../../.claude/projects/-data3-hj-home-hj-Repo-Code-as-Libs/memory/feedback_pyright_strict_default.md)
+- pyright strict 与 suppression ladder —— [pyright_stub_noise.md](../../../hjlibm/docs/hjlib_standard/pyright_stub_noise.md)
 - 字符串 percent-style 单引号 / 注释英文标点 / 4 空格缩进 / 禁 `utils_*.py` 命名
   —— 见 `Code_as_Libs/CLAUDE.md` + family memory。
 - 测试两棵树（test_smoke + test）—— [test_layout.md](../../../hjlibm/docs/hjlib_standard/test_layout.md)，
@@ -91,16 +103,18 @@ ladder level 3，根因与处理标准见
 本仓触发库：torch / cv2 / trimesh / smplx 的弱 stub 在几乎每个 numpy/torch
 调用点产生噪声，压垮真实 strict 信号。其余 strict 规则全开，0 errors。
 
-## 5. State of the world
+## 6. State of the world
 
-- pyright: **strict, 0 errors**（见 §4 的规则豁免）。
-- 测试: `test_smoke/` master 全绿；`get_ground_by_smpls_on_the_ground`
+- pyright: **strict, 0 errors**（见 §5 的规则豁免）。
+- 测试: `test_smoke/` **77 passed**；`get_ground_by_smpls_on_the_ground`
   需真实 SMPL 模型，留给数据依赖测试（见 [test.md](test.md)）。
+- density/weighted RCR：公开 API、immutable evidence 与 synthetic hand-oracle
+  smoke 已实现；VirtualCrowd real operation 由 `hjlib-evaluation` 持有。
 - remote: <https://github.com/YrralH/hjlib-ground-solver>
-- deps: hjlib-geometry `fe58e07c` + hjlib-smpl `64f4f49b`（当前 pyproject pin，随 sibling
+- deps: hjlib-geometry `46981fb1` + hjlib-smpl `8bce94c0`（当前 pyproject pin，随 sibling
   commit 落地用 `hjlibm version` bump）。
 
-## 6. What's open
+## 7. What's open
 
 - **AMASS mesh lower-envelope task**: the implemented/reviewed Layered Design residence is
   [`tasks/amass-ground-zmin-family/`](tasks/amass-ground-zmin-family/). It owns

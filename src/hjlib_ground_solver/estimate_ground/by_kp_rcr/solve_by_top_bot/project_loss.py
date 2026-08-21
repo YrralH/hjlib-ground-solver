@@ -2,13 +2,18 @@ from typing import Optional, Tuple, Union
 
 import torch
 
+from hjlib_ground_solver.estimate_ground.by_kp_rcr.observation_weight import (
+    validated_torch_observation_weights,
+)
+
 
 def get_projection_loss(
         xb_gt: torch.Tensor,
         xt_gt: torch.Tensor,
         xt_pred: torch.Tensor,
         flag_ret_filter_mask: bool = False,
-        ratio_filter_keep: float = 0.9
+        ratio_filter_keep: float = 0.9,
+        observation_weights: torch.Tensor | None = None,
     ) -> Union[
         Tuple[int, torch.Tensor, torch.Tensor],
         Tuple[int, torch.Tensor, torch.Tensor, Optional[torch.Tensor]],
@@ -54,14 +59,26 @@ def get_projection_loss(
     assert losses_mod.shape == torch.Size([N]), losses_mod.shape
     assert losses_pixel.shape == torch.Size([N]), losses_pixel.shape
 
+    weights = validated_torch_observation_weights(
+        observation_weights,
+        N,
+        losses_mod.dtype,
+        losses_mod.device,
+    )
+
     if flag_ret_filter_mask:
         # consider losses_pixel only
         mask = losses_pixel < torch.quantile(losses_pixel, ratio_filter_keep)
     else:
         mask = None
 
-    loss_mod = torch.mean(losses_mod)
-    loss_pixel = torch.mean(losses_pixel)
+    if weights is None:
+        loss_mod = torch.mean(losses_mod)
+        loss_pixel = torch.mean(losses_pixel)
+    else:
+        weight_sum = torch.sum(weights)
+        loss_mod = torch.sum(weights * losses_mod) / weight_sum
+        loss_pixel = torch.sum(weights * losses_pixel) / weight_sum
 
     assert loss_mod.shape == torch.Size([]), loss_mod.shape
     assert loss_pixel.shape == torch.Size([]), loss_pixel.shape

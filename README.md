@@ -4,6 +4,8 @@
 深度图等输入**主动推断**地面参数与几何，也提供 full-mesh lower-envelope
 与 static-foot height-cluster candidate 统计，并从 2D HVIP 反推 3D 信息。从 monolith
 `lib_dynamic_hvip/ground/` 的 solver 子树迁出（file-mapping port）。
+top/bottom RCR 还可显式接收 per-observation 正权重；本仓提供基于 provisional
+unit-plane exact-LOO KDE / kNN 的可检查 inverse-density 权重记录。
 
 与 [`hjlib-geometry`](../hjlib-geometry) 的边界：地面的**被动使用**（reverse_project /
 transform / by_param 等已知地面后的操作）在 hjlib-geometry；本仓只装**求解**侧。
@@ -33,11 +35,15 @@ array_top = ...     # (N, 2) pixel, 双肩中点
 array_bottom = ...  # (N, 2) pixel, 双踝中点
 K = ...             # (3, 3) 相机内参
 
-ground, loss = solve_ground_param_by_top_bottom_given_K(
+ground, objective = solve_ground_param_by_top_bottom_given_K(
     array_top, array_bottom, K, H_prior=1.35
 )
 assert ground.shape == (4,)
+assert objective >= 0.0
 ```
+
+若要先把密集重复观测的贡献压平，见
+[density_balanced_rcr.md](docs/usage/density_balanced_rcr.md)。
 
 ## 文档
 

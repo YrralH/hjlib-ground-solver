@@ -39,6 +39,12 @@ from hjlib_ground_solver.estimate_ground.by_vertex_subset_observation import (
     Vertex_Subset_Observation_Chunk,
     compute_vertex_subset_observation_chunk,
 )
+from hjlib_ground_solver.estimate_ground.observation_density import (
+    Ground_Observation_Density,
+    Ground_Observation_KDE_Density,
+    compute_ground_observation_density,
+    compute_ground_observation_kde_density,
+)
 
 
 __all__ = [
@@ -69,4 +75,8 @@ __all__ = [
     'estimate_static_foot_plantar_humor_baseline',
     'Vertex_Subset_Observation_Chunk',
     'compute_vertex_subset_observation_chunk',
+    'Ground_Observation_Density',
+    'Ground_Observation_KDE_Density',
+    'compute_ground_observation_density',
+    'compute_ground_observation_kde_density',
 ]

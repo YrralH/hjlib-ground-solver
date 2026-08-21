@@ -11,6 +11,7 @@ test_smoke/
 ├── test_ground_geometry.py         by_pillars / by_points / plane fits / world_space geometry
 ├── test_ground_param_and_hvip.py   get_ground_param_in_world_space(_with_extrinsic) / get_3d_info_from_hvip_2d
 ├── test_estimate_ground.py         get_KN / get_bias / get_KN_with_filter / projection_loss / uv_to_xyz / solve_D_search / 顶层入口
+├── test_observation_density.py     provisional-plane coordinates / exact-LOO KDE / kNN density / clipping / ESS / validation / immutability
 ├── test_mesh_lower_envelope.py     exact coverage / contamination / ties / run / reducer / re-export
 ├── test_mesh_lower_envelope_peeling.py  first eligible low-prefix / iteration / budgets / oracle
 ├── test_static_foot_humor.py       literal upstream oracle / cluster priority / terrain / validation
@@ -28,6 +29,11 @@ test_smoke/
   - estimate_ground / hvip：构造"相机俯视 `z=0` 地面"的 RT + K，把站立行人的
     top/bottom 3D 点投影到 2D（**加 ~1.5px 抖动**，否则消失点过滤会因 bias 全相等而清空）。
     `get_3d_info_from_hvip_2d` 用主点像素 → 反投影回世界原点，断言 `z≈0`。
+  - weighted RCR：hand-reduced weighted normal/D objective、all-one/`None` parity、
+    两轮 trim weight alignment、所有公开 low-level validation 与 top-level forwarding。
+  - observation density：exact LOO/chunk oracle、Scott covariance closure、nonuniform grid hand oracle、provisional-normal scale/sign invariance、
+    duplicate radius floor、clip/mean-one/ESS closure、输入 independence、
+    read-only record 与 degenerate/invalid failure。
   - mesh lower envelope：合成 `(B,V,3)` torch mesh 与 `T=1000` contamination
     oracle；覆盖 exact Decimal discard count、short-sequence 离散边界、ties、连续/
     稀疏低尾、autograd、dtype/device、输入不变和三级 public re-export。

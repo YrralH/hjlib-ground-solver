@@ -4,6 +4,9 @@ import numpy as np
 import torch
 
 from hjlib_ground_solver.estimate_ground.by_kp_rcr.solve_by_top_bot.project_loss import get_projection_loss
+from hjlib_ground_solver.estimate_ground.by_kp_rcr.observation_weight import (
+    validated_numpy_observation_weights,
+)
 
 
 def uv_to_xyz_via_ground_torch(uv: torch.Tensor, ground: torch.Tensor, cam_in: torch.Tensor) -> torch.Tensor:
@@ -19,21 +22,16 @@ def uv_to_xyz_via_ground_torch(uv: torch.Tensor, ground: torch.Tensor, cam_in: t
     assert len(uv.shape) == 2
     assert uv.shape[0] == 3
 
-    fx = cam_in[0, 0]
-    fy = cam_in[1, 1]
-    cx = cam_in[0, 2]
-    cy = cam_in[1, 2]
-
     num = uv.shape[1]
-
-    # get rid of for-loop
-    term_1 = ground[0] * (1 / fx) * (uv[0, :] - cx)
-    term_2 = ground[1] * (1 / fy) * (uv[1, :] - cy)
-    term_3 = ground[2]
-    new_z = - ground[3] / (term_1 + term_2 + term_3)
-    assert new_z.shape == (num,), new_z.shape
-
-    xyz = torch.matmul(torch.inverse(cam_in), (uv * new_z))
+    rays = torch.linalg.solve(cam_in, uv)
+    denominators = torch.sum(ground[:3, None] * rays, dim=0)
+    if bool(torch.any(torch.abs(denominators) <= 1e-8).item()):
+        raise ValueError('camera ray is parallel or near-parallel to ground')
+    scales = -ground[3] / denominators
+    xyz = rays * scales[None, :]
+    assert xyz.shape == (3, num), xyz.shape
+    if not bool(torch.isfinite(xyz).all().item()):
+        raise ValueError('ground intersection must be finite')
     return xyz
 
 
@@ -46,8 +44,21 @@ def solve_D_search(
     D_init: float = 10.0,
     flag_ret_filter_mask: bool = False,
     ratio_filter_keep: float = 0.9,
-    device: torch.device = torch.device('cpu')
+    device: torch.device = torch.device('cpu'),
+    *,
+    distance_min: float = -5.0,
+    distance_max: float = 80.0,
+    distance_step: float = 0.1,
+    observation_weights: np.ndarray | None = None,
 ) -> Union[Tuple[np.ndarray, np.ndarray], Tuple[np.ndarray, np.ndarray, np.ndarray]]:
+
+    del D_init
+
+    num_observations = xb.shape[1]
+    weights = validated_numpy_observation_weights(
+        observation_weights,
+        num_observations,
+    )
 
     if ground_normal[2] > 0:
         ground_normal = -1.0 * ground_normal
@@ -55,6 +66,11 @@ def solve_D_search(
     cam_para_tensor = torch.from_numpy(cam_para).to(torch.float32).to(device)
     xb_tensor = torch.from_numpy(xb).to(torch.float32).to(device)
     xt_tensor = torch.from_numpy(xt).to(torch.float32).to(device)
+    weights_tensor = (
+        None
+        if weights is None
+        else torch.from_numpy(weights).to(torch.float32).to(device)
+    )
 
     def forward(
             D: Union[torch.Tensor, float],
@@ -82,7 +98,8 @@ def solve_D_search(
                 xt_gt=xt_tensor,
                 xt_pred=uv_top,
                 flag_ret_filter_mask=flag_ret_filter_mask,
-                ratio_filter_keep=ratio_filter_keep
+                ratio_filter_keep=ratio_filter_keep,
+                observation_weights=weights_tensor,
             )
             assert len(ret) == 4, len(ret)
             loss_vec, loss_mod, loss_pixel, mask = ret
@@ -91,7 +108,8 @@ def solve_D_search(
             ret = get_projection_loss(
                 xb_gt=xb_tensor,
                 xt_gt=xt_tensor,
-                xt_pred=uv_top
+                xt_pred=uv_top,
+                observation_weights=weights_tensor,
             )
             assert len(ret) == 3, len(ret)
             loss_vec, loss_mod, loss_pixel = ret
@@ -100,21 +118,35 @@ def solve_D_search(
     K2 = 1
     K3 = 1
 
+    if not (
+            np.isfinite(distance_min)
+            and np.isfinite(distance_max)
+            and np.isfinite(distance_step)
+            and distance_min < distance_max
+            and distance_step > 0.0
+        ):
+        raise ValueError('distance search bounds and step are invalid')
+    distance_candidates = np.arange(
+        distance_min,
+        distance_max,
+        distance_step,
+        dtype=np.float64,
+    )
+    if distance_candidates.size < 3:
+        raise ValueError('distance search requires at least three candidates')
     list_loss: list[float] = []
-    list_d: list[float] = []
-    for d_cand in np.arange(-5, 80, 0.1):
+    for d_cand in distance_candidates:
         ret = forward(float(d_cand))
         assert len(ret) == 3, len(ret)
         loss_vec, loss_mod, loss_pixel = ret
         loss = K1 * loss_vec + K2 * loss_mod + K3 * loss_pixel
-        list_d.append(float(d_cand))
         list_loss.append(loss.item())
 
-    d_best = list_d[int(np.argmin(list_loss))]
+    index_best = int(np.argmin(list_loss))
+    if index_best in (0, distance_candidates.size - 1):
+        raise ValueError('best ground distance lies on the search boundary')
+    d_best = float(distance_candidates[index_best])
 
-    K1_ret = 0
-    K2_ret = 0
-    K3_ret = 1
     if flag_ret_filter_mask:
         ret = forward(d_best, flag_ret_filter_mask=flag_ret_filter_mask, ratio_filter_keep=ratio_filter_keep)
         assert len(ret) == 4, len(ret)
@@ -125,7 +157,7 @@ def solve_D_search(
         loss_vec, loss_mod, loss_pixel = ret
         mask = None
 
-    loss_ret = K1_ret * loss_vec + K2_ret * loss_mod + K3_ret * loss_pixel
+    loss_ret = loss_mod + loss_pixel
 
     ground_tensor = torch.zeros((4)).to(torch.float32).to(device)
     ground_tensor[0:3] = ground_normal_tensor

@@ -80,6 +80,25 @@ Equivalence model（uniform parity + intentional divergence）见
 
 ## 7. Bug fixes during the port
 
+- `get_KN_with_filter` previously sorted the angular-bias values and then
+  applied the resulting sorted-position mask to the unsorted observation
+  columns. The filter therefore retained an input-order-dependent prefix rather
+  than the low-bias observations. The mask is now computed in original column
+  order against the selected bias threshold; a permutation-invariance smoke
+  locks the corrected behavior.
+- The same filter used float32 angular biases plus a strict cutoff, so exact or
+  tied low-bias observations could all be removed. Biases are now float64 and
+  the order-statistic cutoff is inclusive; exact-oracle coverage locks this.
+- `get_KN` now uses reduced SVD and the actual last right-singular vector. This
+  removes an unused `N x N` left matrix at large `N`, rejects rank-degenerate or
+  infinite-vanishing-point inputs explicitly, and preserves the corrected
+  finite-VP result.
+- The RCR distance path now forwards `device_solve`, supports full finite
+  nonsingular intrinsics in ray unprojection, exposes its actual fixed grid
+  instead of an unused `D_init`, rejects a boundary optimum, and returns the
+  dimensionless objective that selected the distance rather than only one of
+  its components.
+
 | id | 位置 | 问题 | 修复 |
 |---|---|---|---|
 | FIX-1 | `get_ground_geometry/by_smpl.py` | monolith `get_ground_by_smpls_on_the_ground` 形参注解 `list_smpl_verts: List[str]` 错误（实际是 SMPL verts `np.ndarray` 列表，且 hjlib-smpl 的 `get_rough_pillars_and_from_smpl_verts_batch` 签名要求 `List[np.ndarray]`） | 注解改为 `List[np.ndarray]`。纯类型注解修正，运行期行为不变 |

@@ -1,11 +1,13 @@
 {
     "include": [
         "src",
-        "test_smoke"
+        "test_smoke",
+        "test"
     ],
     "typeCheckingMode": "strict",
     "reportImplicitOverride": "error",
     "pythonVersion": "3.12",
+    "pythonPlatform": "Linux",
     "reportMissingTypeStubs":      "none",
     "reportPrivateImportUsage":    "none",
     "reportUnknownMemberType":     "none",

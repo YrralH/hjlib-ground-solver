@@ -4,6 +4,7 @@
 
 ## 一句话索引
 
+- [density_balanced_rcr.md](density_balanced_rcr.md)：从 top/bottom 2D observations 构造可检查的 automatic-KDE 或 fixed-kNN inverse-density 权重并运行 weighted RCR。
 - [vertex_subset_observation.md](vertex_subset_observation.md)：对显式局部 mesh indices 做可分块高度与 median speed 观测。
 - [static_foot_plantar_humor.md](static_foot_plantar_humor.md)：在共同 plantar 高度/速度域上做 HuMoR-style phase-1 聚类。
 - [hj_derived_plantar_zmin.md](hj_derived_plantar_zmin.md)：从左右 plantar 高度取明确非官方的 HJ-derived zmin 地面代理。
@@ -13,7 +14,10 @@
 
 ```
 我有 top/bottom 2D 关键点 (一群站立的人) + 相机 K
-    └─ solve_ground_param_by_top_bottom_given_K   (estimate_ground, 主入口)
+    ├─ 直接等权求解 -> solve_ground_param_by_top_bottom_given_K
+    └─ 想降低空间重复观测的支配 -> compute_ground_observation_kde_density
+                                      (固定局部尺度才用 compute_ground_observation_density)
+                                      + observation_weights=...
        内部链路: get_KN_with_filter -> solve_D_search
                  (底层可单独调: get_KN / get_bias_from_2D_ground_normal /
                   get_projection_loss / uv_to_xyz_via_ground_torch)
@@ -74,6 +78,17 @@
     └─ get_3d_info_from_hvip_2d   -> (3D world HVIP, 每帧地面参数, torso 2D)
 ```
 
+## Common API table
+
+| 输入 / 目标 | 主入口 | 返回 |
+| --- | --- | --- |
+| top/bottom pixels + K | `solve_ground_param_by_top_bottom_given_K` | camera-frame plane `(4,)` + dimensionless objective |
+| bottom pixels + K + provisional normal | `compute_ground_observation_kde_density` / `compute_ground_observation_density` | immutable density/weight evidence |
+| 3D ground points | `get_ground_by_points_on_the_ground_lstsq` | plane `(4,)` |
+| pillars / SMPL verts | `get_ground_by_pillars_on_the_ground` / `get_ground_by_smpls_on_the_ground` | ground mesh `(verts, faces)` |
+| depth map + K | `get_ground_main_area_by_depth_map` | ground-area result；当前 refinement 受 migration 限制 |
+| 2D HVIP + RT/K | `get_3d_info_from_hvip_2d` | world HVIP + per-frame plane + torso 2D |
+
 ## 公共契约
 
 - 地面参数统一是 `(4,)` 的 `np.ndarray`，含义 `(A, B, C, D)`，平面 `Ax + By + Cz + D = 0`；
@@ -81,6 +96,16 @@
 - 地面 mesh 统一返回 `(verts, faces)`，`verts` 为 `(4, 3)`、`faces` 为 `(2, 3)`
   （`get_ground_geometry_in_world_space` 例外，直接返回 `trimesh.Trimesh`）。
 - 像素坐标统一 `(u, v)`；齐次列向量约定 `(3, N)` 每列 `[u, v, 1]`（estimate_ground 内部）。
+- top/bottom RCR 至少需要 3 个有限、非退化 observation。它用两轮低 angular-bias
+  trimming 估计有限 vertical vanishing point，再在显式
+  `[distance_min, distance_max)` metre grid 上搜索 plane distance；命中 search boundary
+  会失败。返回的第二项是选择 distance 时使用的 dimensionless
+  `relative-length + normalized-pixel` objective，不是 metre error。精确水平相机的
+  vertical vanishing point 位于无穷远，当前入口会明确拒绝而非返回 NaN。
+- `observation_weights` 是 keyword-only 可选 `(N,) float64` finite positive 数组。两轮 angular
+  trimming 仍由未加权 observations 固定 membership，权重只进入最终 normal SVD
+  与完整 observation population 的 D objective。`D_init/device/flag` 的历史 positional
+  slots 保留；新增 distance bounds 与 weights 不占用旧位置。
 
 ### Mesh lower envelope
 
@@ -190,6 +215,12 @@ strict `< 0.005 m/native-frame` 排除粗大运动，再对保留的左脚趾、
 
 - `solve_ground_param_by_top_bottom_given_K(flag_opt=True)` 会 `raise NotImplementedError`
   （monolith 标注 opt 路径不稳定，仅保留 grid-search）。
+- `solve_ground_param_by_top_bottom_given_K` 的尺度由 `H_prior` 提供；默认
+  `1.35 m` 是 fixed-height RCR baseline，而不是从单目关键点独立恢复的绝对人体高度。
+- inverse-density 权重只重新分配贡献，不删除 observations，也不保证 normal、D
+  与组合的 ground-effect 指标会同时改善；必须分别诊断。
+- 本次同时修正了旧 trim 的 sorted-position mask 与 threshold-tie bug。因此当前
+  unweighted/`None` 是 corrected control，不是 pre-fix implementation 的 byte parity。
 - `get_3d_info_from_hvip_2d` 末尾断言恢复出的 world HVIP `z ≈ 0`（假设 up_axis='z'、
   地面过世界原点）；若相机/地面约定不符会触发 assert。
 - depth-map 系列函数依赖 hjlib-geometry 的 `get_depth_of_points_via_ground`；
