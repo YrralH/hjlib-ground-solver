@@ -110,6 +110,10 @@ from hjlib_ground_solver.estimate_ground.observation_density import (
     compute_ground_observation_density,
     compute_ground_observation_kde_density,
 )
+from hjlib_ground_solver.estimate_ground.by_vanishing_direction import (
+    Vanishing_Direction_Ground_Normal_Result,
+    solve_ground_normal_from_vanishing_directions,
+)
 
 __all__ = [
     # segment_area
@@ -174,4 +178,6 @@ __all__ = [
     'Ground_Observation_KDE_Density',
     'compute_ground_observation_density',
     'compute_ground_observation_kde_density',
+    'Vanishing_Direction_Ground_Normal_Result',
+    'solve_ground_normal_from_vanishing_directions',
 ]

@@ -18,6 +18,7 @@ test_smoke/
 ├── test_static_foot_plantar_humor.py physical-speed gate / noise exclusion / span / validation
 ├── test_hj_derived_plantar_zmin.py explicit nonofficial provenance / zmin ties / validation
 ├── test_vertex_subset_observation.py chunk equality / union / median / carry / autograd / overflow
+├── test_vanishing_direction_ground_normal.py locally-horizontal GN wrapper / once-only delegation / immutable exact winner / all-rejected ledger / slope boundary
 ├── test_all_func.py                master runner (import 各 smoke_test_*)
 └── clean_test_data.py              LIST_PATH_CLEAN (当前空, 全程 in-memory 无产物)
 ```

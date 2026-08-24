@@ -16,6 +16,9 @@ from test_vertex_subset_observation import smoke_test_vertex_subset_observation
 from test_static_foot_plantar_humor import smoke_test_static_foot_plantar_humor
 from test_hj_derived_plantar_zmin import smoke_test_hj_derived_plantar_zmin
 from test_observation_density import smoke_test_observation_density
+from test_vanishing_direction_ground_normal import (
+    smoke_test_vanishing_direction_ground_normal,
+)
 
 
 def main() -> None:
@@ -33,6 +36,8 @@ def main() -> None:
     print('[OK] hj_derived_plantar_zmin')
     smoke_test_observation_density()
     print('[OK] observation_density')
+    smoke_test_vanishing_direction_ground_normal()
+    print('[OK] vanishing_direction_ground_normal')
     print('[ALL OK] hjlib-ground-solver smoke tests')
 
 

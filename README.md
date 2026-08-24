@@ -6,6 +6,8 @@
 `lib_dynamic_hvip/ground/` 的 solver 子树迁出（file-mapping port）。
 top/bottom RCR 还可显式接收 per-observation 正权重；本仓提供基于 provisional
 unit-plane exact-LOO KDE / kNN 的可检查 inverse-density 权重记录。
+在显式 locally-horizontal 假设下，也可把 `hjlib-camera-solver` 的 robust calibrated
+vertical 解释为 camera-space unit Ground Normal；该入口不解 plane offset 或 slope。
 
 与 [`hjlib-geometry`](../hjlib-geometry) 的边界：地面的**被动使用**（reverse_project /
 transform / by_param 等已知地面后的操作）在 hjlib-geometry；本仓只装**求解**侧。
@@ -20,7 +22,8 @@ cd hjlib-ground-solver
 pip install -e .
 ```
 
-依赖两个 sibling 包（已 `pip install -e .` 到同一 env）：`hjlib-geometry`、`hjlib-smpl`。
+直接依赖四个 sibling 包（已 `pip install -e .` 到同一 env）：`hjlib-camera`、
+`hjlib-camera-solver`、`hjlib-geometry`、`hjlib-smpl`。
 
 ## 最小示例
 

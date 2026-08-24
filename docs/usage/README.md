@@ -22,6 +22,11 @@
                  (底层可单独调: get_KN / get_bias_from_2D_ground_normal /
                   get_projection_loss / uv_to_xyz_via_ground_torch)
 
+我有一路或多路独立 line→VP associations + calibrated K，且地面局部水平
+    └─ solve_ground_normal_from_vanishing_directions
+       -> camera-space unit Ground Normal + 完整 robust direction candidate ledger
+       (只解 normal，不解 D/相机高度；sloped ground 不适用)
+
 我有一批 3D 点 (落在地面上)
     ├─ 要地面 mesh (4 顶点矩形)         -> get_ground_by_points_on_the_ground
     └─ 要地面参数 (A,B,C,D)             -> get_ground_by_points_on_the_ground_lstsq
@@ -88,6 +93,7 @@
 | pillars / SMPL verts | `get_ground_by_pillars_on_the_ground` / `get_ground_by_smpls_on_the_ground` | ground mesh `(verts, faces)` |
 | depth map + K | `get_ground_main_area_by_depth_map` | ground-area result；当前 refinement 受 migration 限制 |
 | 2D HVIP + RT/K | `get_3d_info_from_hvip_2d` | world HVIP + per-frame plane + torso 2D |
+| independent line→VP sources + K | `solve_ground_normal_from_vanishing_directions` | camera-space unit normal or `None` + full direction-fusion ledger |
 
 ## 公共契约
 
@@ -106,6 +112,9 @@
   trimming 仍由未加权 observations 固定 membership，权重只进入最终 normal SVD
   与完整 observation population 的 D objective。`D_init/device/flag` 的历史 positional
   slots 保留；新增 distance bounds 与 weights 不占用旧位置。
+- vanishing-direction GN 入口显式假设 local ground normal 与 gravity/scene vertical 平行；
+  architectural vertical 不等于 gravity 或 ground 有 slope 时不适用。它不返回 plane offset
+  `D`，也不从单图恢复 camera height。
 
 ### Mesh lower envelope
 

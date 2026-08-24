@@ -9,6 +9,9 @@
 另外提供不声称 ground truth 的 full-mesh / vertex-subset observation、
 static-foot comparison candidates，以及 provenance 固定为
 `hj_derived_nonofficial` 的 plantar-zmin 高度代理。
+在 explicit locally-horizontal scene assumption 下，本仓还负责把 camera-solver
+选出的 calibrated vertical 解释为 camera-space Ground Normal；不解 slope、offset 或
+camera height。
 
 **不做什么**：
 
@@ -25,7 +28,7 @@ static-foot comparison candidates，以及 provenance 固定为
 ```
 hjlib-ground-solver/
 ├── README.md
-├── pyproject.toml              deps = hjlib-geometry + hjlib-smpl (+ numpy/torch/cv2/trimesh/scipy/sklearn)
+├── pyproject.toml              deps = hjlib-camera + camera-solver + geometry + smpl (+ third-party runtime)
 ├── pyrightconfig.json          strict; 关掉 5 条第三方 stub 噪声规则 (见 Family conventions)
 ├── .gitignore
 ├── src/hjlib_ground_solver/
@@ -52,6 +55,7 @@ hjlib-ground-solver/
 │       ├── by_vertex_subset_observation.py  chunkable local-vertex height/speed tracks
 │       ├── by_static_foot_plantar_humor.py  common-domain plantar HuMoR-style comparator
 │       ├── by_hj_derived_plantar_zmin.py    explicitly nonofficial absolute plantar zmin
+│       ├── by_vanishing_direction.py        robust camera vertical -> locally-horizontal GN
 │       └── by_kp_rcr/
 │           ├── compute_KN_by_vertical_lines.py  竖直线消失点 KN + 过滤 (内联 3 个 utils)
 │           ├── observation_weight.py            optional NumPy/torch positive-weight boundary validation
@@ -79,8 +83,9 @@ hjlib-ground-solver/
   - `by_points.py` 内联 `utils_py.get_valid_filter_mask_by_max_value`
   - `compute_KN_by_vertical_lines.py` 内联 `utils_np.{assert_zeros, filter_column_vectors_by_list_valid_mask}`
     + `utils_py.get_valid_filter_mask_by_max_value`
-- **跨仓边界**：本仓只直接 dep `hjlib-geometry` + `hjlib-smpl`；skeleton / camera /
-  vis-2d 作为 hjlib-smpl 的传递依赖在 env 里，但**不在** `[tool.hjlibm.deps]` 直接声明。
+- **跨仓边界**：本仓 direct dep `hjlib-camera`（public K type）、
+  `hjlib-camera-solver`（robust direction owner）、`hjlib-geometry`（ground use）与
+  `hjlib-smpl`（body observations）；skeleton / vis-2d 仍为传递依赖。
 - **density-balanced RCR**：method-neutral provisional-plane density、immutable
   intermediate 与 weighted solver contract 见
   [observation_density.md](observation_density.md)。dataset selection 与结果评估不进本仓。
@@ -106,13 +111,17 @@ ladder level 3，根因与处理标准见
 ## 6. State of the world
 
 - pyright: **strict, 0 errors**（见 §5 的规则豁免）。
-- 测试: `test_smoke/` **77 passed**；`get_ground_by_smpls_on_the_ground`
+- 测试: `test_smoke/` **82 passed**；`get_ground_by_smpls_on_the_ground`
   需真实 SMPL 模型，留给数据依赖测试（见 [test.md](test.md)）。
 - density/weighted RCR：公开 API、immutable evidence 与 synthetic hand-oracle
   smoke 已实现；VirtualCrowd real operation 由 `hjlib-evaluation` 持有。
+- **Ground Normal from robust vanishing direction**: implemented and reviewed
+  at [`tasks/vanishing_direction_ground_normal/`](tasks/vanishing_direction_ground_normal/);
+  this repo owns only the locally-horizontal ground interpretation while
+  camera-solver owns direction scoring/refinement and geometry owns rasterization.
 - remote: <https://github.com/YrralH/hjlib-ground-solver>
-- deps: hjlib-geometry `46981fb1` + hjlib-smpl `8bce94c0`（当前 pyproject pin，随 sibling
-  commit 落地用 `hjlibm version` bump）。
+- deps: hjlib-camera `a0071f8c` + hjlib-camera-solver `7bf4c961` +
+  hjlib-geometry `f42416fa` + hjlib-smpl `e0ac0de6`（当前 pyproject pins）。
 
 ## 7. What's open
 
