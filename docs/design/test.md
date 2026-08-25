@@ -21,6 +21,7 @@ test_smoke/
 ├── test_vanishing_direction_ground_normal.py locally-horizontal GN wrapper / once-only delegation / immutable exact winner / all-rejected ledger / slope boundary
 ├── test_orthogonal_vanishing_direction_ground_normal.py discrete + role-aware GN wrapper / exact winner / failure propagation
 ├── test_person_vertical_line_evidence.py weighted person-line RCR / checked one-VP source / numeric and degeneracy boundaries
+├── test_equal_vertical_line_ground_normal.py equal-line TLS GN wrapper / once-only delegation / exact nested result / three-level exports
 ├── test_all_func.py                master runner (import 各 smoke_test_*)
 └── clean_test_data.py              LIST_PATH_CLEAN (当前空, 全程 in-memory 无产物)
 ```

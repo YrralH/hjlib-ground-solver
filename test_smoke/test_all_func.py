@@ -25,6 +25,9 @@ from test_orthogonal_vanishing_direction_ground_normal import (
 from test_person_vertical_line_evidence import (
     smoke_test_person_vertical_line_evidence,
 )
+from test_equal_vertical_line_ground_normal import (
+    smoke_test_equal_vertical_line_ground_normal,
+)
 
 
 def main() -> None:
@@ -48,6 +51,8 @@ def main() -> None:
     print('[OK] orthogonal_vanishing_direction_ground_normal')
     smoke_test_person_vertical_line_evidence()
     print('[OK] person_vertical_line_evidence')
+    smoke_test_equal_vertical_line_ground_normal()
+    print('[OK] equal_vertical_line_ground_normal')
     print('[ALL OK] hjlib-ground-solver smoke tests')
 
 

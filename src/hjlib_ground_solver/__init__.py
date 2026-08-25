@@ -125,6 +125,10 @@ from hjlib_ground_solver.estimate_ground.by_person_vertical_lines import (
     Person_Vertical_Direction_Evidence_Result,
     fit_person_vertical_direction_evidence,
 )
+from hjlib_ground_solver.estimate_ground.by_equal_vertical_lines import (
+    Equal_Weight_Vertical_Line_Ground_Normal_Result,
+    solve_ground_normal_by_equal_weight_vertical_lines,
+)
 
 __all__ = [
     # segment_area
@@ -198,4 +202,6 @@ __all__ = [
     'solve_ground_normal_by_role_aware_orthogonal_consensus',
     'Person_Vertical_Direction_Evidence_Result',
     'fit_person_vertical_direction_evidence',
+    'Equal_Weight_Vertical_Line_Ground_Normal_Result',
+    'solve_ground_normal_by_equal_weight_vertical_lines',
 ]

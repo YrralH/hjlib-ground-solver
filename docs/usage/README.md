@@ -30,6 +30,8 @@
     │  └─ solve_ground_normal_by_orthogonal_consensus
     ├─ full sources + 至多一路 vertical-only evidence
     │  └─ solve_ground_normal_by_role_aware_orthogonal_consensus
+    ├─ 已预选的一路或多路 vertical 2D segments，要求每条线等权重新拟合
+    │  └─ solve_ground_normal_by_equal_weight_vertical_lines
     └─ 要 continuous robust fusion
        └─ solve_ground_normal_from_vanishing_directions
     均返回 camera-space unit Ground Normal + 原 selector ledger
@@ -110,6 +112,7 @@
 | one line→VP source + K | `solve_ground_normal_by_vertical_vp_selection` | unit normal + support/camera-y/margin receipt |
 | full line→VP sources + K | `solve_ground_normal_by_orthogonal_consensus` | unit normal + discrete winner/runner ledger |
 | full + vertical-only line→VP sources + K | `solve_ground_normal_by_role_aware_orthogonal_consensus` | unit normal + role-aware discrete ledger |
+| preselected vertical 2D segments + K | `solve_ground_normal_by_equal_weight_vertical_lines` | equal-line TLS unit normal + source/hash/count/scatter ledger |
 | upright-person top/bottom pixels + weights + K | `fit_person_vertical_direction_evidence` | checked one-VP source + direction receipt |
 
 ## 公共契约
@@ -134,6 +137,9 @@
   `D`，也不从单图恢复 camera height。
 - person-line evidence 还要求站立/近直立 body axis 表示 gravity，并且全部 observations
   已在同一 uncropped fixed-camera pixel frame；mixed crop/resize/K 不适用。
+- equal-weight vertical-line 入口不会替调用方判断哪些 lines 是 vertical。调用方先完成
+  method-specific preselection；随后所有保留 segments 逐线等权，不按 source 数、segment
+  length 或 GT 重加权。返回值假设 local ground horizontal，只解 normal，不解 `D`。
 
 ### Mesh lower envelope
 
