@@ -2,7 +2,7 @@
 
 ## Status
 
-- State: implementation verified; clean commit/run pending
+- State: owner implementation committed; consumer run pending
 - Owner: `hjlib-ground-solver`
 - Consumer: Campaign 04 in `hjlib-experiments`
 - Camera primitive dependency: `hjlib-camera-solver`
