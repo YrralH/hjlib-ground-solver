@@ -8,8 +8,8 @@ top/bottom RCR 还可显式接收 per-observation 正权重；本仓提供基于
 unit-plane exact-LOO KDE / kNN 的可检查 inverse-density 权重记录。
 在显式 locally-horizontal 假设下，也可把 `hjlib-camera-solver` 的 single-source VP、
 discrete orthogonal consensus 或 robust calibrated vertical 解释为 camera-space unit
-Ground Normal；也可把预选出的多路 vertical 2D segments 逐线等权联合拟合成一个新的
-camera-space Ground Normal。另可把同一 fixed camera 下的站立人体 top/bottom 线拟合成
+Ground Normal；也可把预选出的多路 vertical 2D segments 按逐线等权或固定 source 总份额
+联合拟合成一个新的 camera-space Ground Normal。另可把同一 fixed camera 下的站立人体 top/bottom 线拟合成
 一条可融合的 vertical evidence source。这些入口不解 plane offset、camera height 或 slope。
 
 与 [`hjlib-geometry`](../hjlib-geometry) 的边界：地面的**被动使用**（reverse_project /

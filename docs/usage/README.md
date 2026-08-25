@@ -32,6 +32,8 @@
     │  └─ solve_ground_normal_by_role_aware_orthogonal_consensus
     ├─ 已预选的一路或多路 vertical 2D segments，要求每条线等权重新拟合
     │  └─ solve_ground_normal_by_equal_weight_vertical_lines
+    ├─ 已预选的多路 vertical 2D segments，要求固定每路 source 总份额
+    │  └─ solve_ground_normal_by_source_weighted_vertical_lines
     └─ 要 continuous robust fusion
        └─ solve_ground_normal_from_vanishing_directions
     均返回 camera-space unit Ground Normal + 原 selector ledger
@@ -113,6 +115,7 @@
 | full line→VP sources + K | `solve_ground_normal_by_orthogonal_consensus` | unit normal + discrete winner/runner ledger |
 | full + vertical-only line→VP sources + K | `solve_ground_normal_by_role_aware_orthogonal_consensus` | unit normal + role-aware discrete ledger |
 | preselected vertical 2D segments + K | `solve_ground_normal_by_equal_weight_vertical_lines` | equal-line TLS unit normal + source/hash/count/scatter ledger |
+| preselected vertical 2D segment sources + fixed fractions + K | `solve_ground_normal_by_source_weighted_vertical_lines` | source-total-weighted TLS unit normal + fraction/source/hash/count/scatter ledger |
 | upright-person top/bottom pixels + weights + K | `fit_person_vertical_direction_evidence` | checked one-VP source + direction receipt |
 
 ## 公共契约
@@ -140,6 +143,9 @@
 - equal-weight vertical-line 入口不会替调用方判断哪些 lines 是 vertical。调用方先完成
   method-specific preselection；随后所有保留 segments 逐线等权，不按 source 数、segment
   length 或 GT 重加权。返回值假设 local ground horizontal，只解 normal，不解 `D`。
+- source-weighted vertical-line 入口使用 caller 固定的 source 总份额，每路内部仍逐线等权；
+  它同样要求每路 lines 已独立预选为同一个物理 scene-vertical/gravity axis，不做 clustering、
+  trimming、fraction tuning 或 GT selection。返回值只解 locally-horizontal normal。
 
 ### Mesh lower envelope
 

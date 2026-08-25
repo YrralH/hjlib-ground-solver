@@ -127,7 +127,9 @@ from hjlib_ground_solver.estimate_ground.by_person_vertical_lines import (
 )
 from hjlib_ground_solver.estimate_ground.by_equal_vertical_lines import (
     Equal_Weight_Vertical_Line_Ground_Normal_Result,
+    Source_Weighted_Vertical_Line_Ground_Normal_Result,
     solve_ground_normal_by_equal_weight_vertical_lines,
+    solve_ground_normal_by_source_weighted_vertical_lines,
 )
 
 __all__ = [
@@ -204,4 +206,6 @@ __all__ = [
     'fit_person_vertical_direction_evidence',
     'Equal_Weight_Vertical_Line_Ground_Normal_Result',
     'solve_ground_normal_by_equal_weight_vertical_lines',
+    'Source_Weighted_Vertical_Line_Ground_Normal_Result',
+    'solve_ground_normal_by_source_weighted_vertical_lines',
 ]
