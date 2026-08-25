@@ -46,8 +46,19 @@ from hjlib_ground_solver.estimate_ground.observation_density import (
     compute_ground_observation_kde_density,
 )
 from hjlib_ground_solver.estimate_ground.by_vanishing_direction import (
+    Vertical_VP_Selection_Ground_Normal_Result,
     Vanishing_Direction_Ground_Normal_Result,
+    solve_ground_normal_by_vertical_vp_selection,
     solve_ground_normal_from_vanishing_directions,
+)
+from hjlib_ground_solver.estimate_ground.by_orthogonal_vanishing_direction import (
+    Orthogonal_Consensus_Ground_Normal_Result,
+    solve_ground_normal_by_orthogonal_consensus,
+    solve_ground_normal_by_role_aware_orthogonal_consensus,
+)
+from hjlib_ground_solver.estimate_ground.by_person_vertical_lines import (
+    Person_Vertical_Direction_Evidence_Result,
+    fit_person_vertical_direction_evidence,
 )
 
 
@@ -83,6 +94,13 @@ __all__ = [
     'Ground_Observation_KDE_Density',
     'compute_ground_observation_density',
     'compute_ground_observation_kde_density',
+    'Vertical_VP_Selection_Ground_Normal_Result',
+    'solve_ground_normal_by_vertical_vp_selection',
     'Vanishing_Direction_Ground_Normal_Result',
     'solve_ground_normal_from_vanishing_directions',
+    'Orthogonal_Consensus_Ground_Normal_Result',
+    'solve_ground_normal_by_orthogonal_consensus',
+    'solve_ground_normal_by_role_aware_orthogonal_consensus',
+    'Person_Vertical_Direction_Evidence_Result',
+    'fit_person_vertical_direction_evidence',
 ]

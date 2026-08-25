@@ -8,6 +8,7 @@
 - [vertex_subset_observation.md](vertex_subset_observation.md)：对显式局部 mesh indices 做可分块高度与 median speed 观测。
 - [static_foot_plantar_humor.md](static_foot_plantar_humor.md)：在共同 plantar 高度/速度域上做 HuMoR-style phase-1 聚类。
 - [hj_derived_plantar_zmin.md](hj_derived_plantar_zmin.md)：从左右 plantar 高度取明确非官方的 HJ-derived zmin 地面代理。
+- [vanishing_direction_ground_normal.md](vanishing_direction_ground_normal.md)：从 line→VP sources 或 upright-person lines 求 locally-horizontal camera-space Ground Normal。
 - 其余 ground solver 入口按输入类型列在本页。
 
 ## 决策树：我有什么 → 调哪个
@@ -23,9 +24,21 @@
                   get_projection_loss / uv_to_xyz_via_ground_torch)
 
 我有一路或多路独立 line→VP associations + calibrated K，且地面局部水平
-    └─ solve_ground_normal_from_vanishing_directions
-       -> camera-space unit Ground Normal + 完整 robust direction candidate ledger
-       (只解 normal，不解 D/相机高度；sloped ground 不适用)
+    ├─ 一路 source，复用 max |camera y| baseline
+    │  └─ solve_ground_normal_by_vertical_vp_selection
+    ├─ 一路或多路 full sources，复用 discrete orthogonal consensus
+    │  └─ solve_ground_normal_by_orthogonal_consensus
+    ├─ full sources + 至多一路 vertical-only evidence
+    │  └─ solve_ground_normal_by_role_aware_orthogonal_consensus
+    └─ 要 continuous robust fusion
+       └─ solve_ground_normal_from_vanishing_directions
+    均返回 camera-space unit Ground Normal + 原 selector ledger
+    (只解 normal，不解 D/相机高度；sloped ground 不适用)
+
+我有同一 fixed camera 下站立/近直立人的 shoulder-midpoint / ankle-midpoint pixels
+    └─ fit_person_vertical_direction_evidence
+       -> weighted RCR retained lines + one checked vertical VP source
+       (作为 vertical-only source 参与 role-aware solve)
 
 我有一批 3D 点 (落在地面上)
     ├─ 要地面 mesh (4 顶点矩形)         -> get_ground_by_points_on_the_ground
@@ -94,6 +107,10 @@
 | depth map + K | `get_ground_main_area_by_depth_map` | ground-area result；当前 refinement 受 migration 限制 |
 | 2D HVIP + RT/K | `get_3d_info_from_hvip_2d` | world HVIP + per-frame plane + torso 2D |
 | independent line→VP sources + K | `solve_ground_normal_from_vanishing_directions` | camera-space unit normal or `None` + full direction-fusion ledger |
+| one line→VP source + K | `solve_ground_normal_by_vertical_vp_selection` | unit normal + support/camera-y/margin receipt |
+| full line→VP sources + K | `solve_ground_normal_by_orthogonal_consensus` | unit normal + discrete winner/runner ledger |
+| full + vertical-only line→VP sources + K | `solve_ground_normal_by_role_aware_orthogonal_consensus` | unit normal + role-aware discrete ledger |
+| upright-person top/bottom pixels + weights + K | `fit_person_vertical_direction_evidence` | checked one-VP source + direction receipt |
 
 ## 公共契约
 
@@ -115,6 +132,8 @@
 - vanishing-direction GN 入口显式假设 local ground normal 与 gravity/scene vertical 平行；
   architectural vertical 不等于 gravity 或 ground 有 slope 时不适用。它不返回 plane offset
   `D`，也不从单图恢复 camera height。
+- person-line evidence 还要求站立/近直立 body axis 表示 gravity，并且全部 observations
+  已在同一 uncropped fixed-camera pixel frame；mixed crop/resize/K 不适用。
 
 ### Mesh lower envelope
 

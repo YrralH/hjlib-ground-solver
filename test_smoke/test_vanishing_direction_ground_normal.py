@@ -13,9 +13,12 @@ from hjlib_camera_solver import (
     Vanishing_Direction_Source,
     Vanishing_Point_Association,
     select_vertical_direction_by_robust_fusion,
+    select_vertical_vanishing_direction,
 )
 from hjlib_ground_solver import (
+    Vertical_VP_Selection_Ground_Normal_Result,
     Vanishing_Direction_Ground_Normal_Result,
+    solve_ground_normal_by_vertical_vp_selection,
     solve_ground_normal_from_vanishing_directions,
 )
 import hjlib_ground_solver.estimate_ground.by_vanishing_direction as wrapper_module
@@ -107,6 +110,48 @@ def test_wrapper_delegates_once_and_returns_independent_winner() -> None:
         result.ground_normal_camera.setflags(write=True)
 
 
+def test_single_source_vp_wrapper_preserves_multicluster_selection() -> None:
+    directions = np.stack(make_directions())
+    source = make_source(directions, 'single-source-multiple-vps')
+    expected = select_vertical_vanishing_direction(
+        source.association,
+        source.line_segments,
+        make_intrinsics(),
+        min_support_count=2,
+    )
+    original = wrapper_module.select_vertical_vanishing_direction
+    with patch.object(
+            wrapper_module,
+            'select_vertical_vanishing_direction',
+            wraps=original,
+        ) as mocked:
+        result = solve_ground_normal_by_vertical_vp_selection(
+            source,
+            make_intrinsics(),
+            min_support_count=2,
+        )
+    assert mocked.call_count == 1
+    assert result.direction_result.cluster_index == expected.cluster_index
+    assert result.direction_result.support_count == expected.support_count
+    assert result.direction_result.winning_abs_camera_y == expected.winning_abs_camera_y
+    assert result.direction_result.score_margin == expected.score_margin
+    np.testing.assert_array_equal(
+        result.ground_normal_camera,
+        expected.direction_camera_up,
+    )
+    with pytest.raises(ValueError, match='no VP cluster'):
+        solve_ground_normal_by_vertical_vp_selection(
+            source,
+            make_intrinsics(),
+            min_support_count=3,
+        )
+    with pytest.raises(ValueError, match='exactly equal'):
+        Vertical_VP_Selection_Ground_Normal_Result(
+            -result.ground_normal_camera,
+            result.direction_result,
+        )
+
+
 def test_constructor_defensively_copies_and_rejects_forgery() -> None:
     source = make_source(np.stack(make_directions()))
     nested = select_vertical_direction_by_robust_fusion(
@@ -168,6 +213,7 @@ def test_sloped_ground_is_explicitly_out_of_scope() -> None:
 
 def smoke_test_vanishing_direction_ground_normal() -> None:
     test_wrapper_delegates_once_and_returns_independent_winner()
+    test_single_source_vp_wrapper_preserves_multicluster_selection()
     test_constructor_defensively_copies_and_rejects_forgery()
     test_all_rejected_preserves_ledger_and_maps_to_none()
     test_camera_solver_input_failure_propagates()

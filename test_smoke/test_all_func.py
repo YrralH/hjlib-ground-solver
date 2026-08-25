@@ -19,6 +19,12 @@ from test_observation_density import smoke_test_observation_density
 from test_vanishing_direction_ground_normal import (
     smoke_test_vanishing_direction_ground_normal,
 )
+from test_orthogonal_vanishing_direction_ground_normal import (
+    smoke_test_orthogonal_vanishing_direction_ground_normal,
+)
+from test_person_vertical_line_evidence import (
+    smoke_test_person_vertical_line_evidence,
+)
 
 
 def main() -> None:
@@ -38,6 +44,10 @@ def main() -> None:
     print('[OK] observation_density')
     smoke_test_vanishing_direction_ground_normal()
     print('[OK] vanishing_direction_ground_normal')
+    smoke_test_orthogonal_vanishing_direction_ground_normal()
+    print('[OK] orthogonal_vanishing_direction_ground_normal')
+    smoke_test_person_vertical_line_evidence()
+    print('[OK] person_vertical_line_evidence')
     print('[ALL OK] hjlib-ground-solver smoke tests')
 
 

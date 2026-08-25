@@ -5,7 +5,7 @@ build-backend = 'hatchling.build'
 [project]
 name = 'hjlib-ground-solver'
 version = '0.1.0'
-description = 'Ground-plane solving and derived ground-height estimation from body, keypoint, mesh, and depth observations.'
+description = 'Ground-plane solving and derived ground-height estimation from body, keypoint, mesh, depth, and vanishing-direction observations.'
 requires-python = '>=3.12'
 dependencies = [
     'numpy',
@@ -23,7 +23,7 @@ packages = ['src/hjlib_ground_solver']
 testpaths = ['test_smoke', 'test']
 
 [tool.hjlibm]
-description_updated = '2026-08-04'
+description_updated = '2026-08-25'
 
 [tool.hjlibm.deps]
 # Active runtime deps after dead-import cleanup (verified 2026-05-27, see docs/design/migration.md).
@@ -34,6 +34,6 @@ description_updated = '2026-08-04'
 # camera-solver owns robust VP direction fusion; camera supplies the public K type.
 # skeleton / vis-2d remain transitive via hjlib-smpl; NOT declared directly here.
 hjlib-camera = { path = '../hjlib-camera', commit = 'a0071f8cc045d759f9c649f472ed198c2d61d04e' }
-hjlib-camera-solver = { path = '../hjlib-camera-solver', commit = '7bf4c961e37c5f9a2761831ddb12bc604fd3bf11' }
+hjlib-camera-solver = { path = '../hjlib-camera-solver', commit = '8930b2922fafc0168e8cf0425559bdf3a9deb7ea' }
 hjlib-geometry = { path = '../hjlib-geometry', commit = 'f42416fa2c42b84c0f6c48d47feee36bb9f8dd3d' }
 hjlib-smpl = { path = '../hjlib-smpl', commit = 'e0ac0de62b2536ff8213c206e6fdf313728de862' }
