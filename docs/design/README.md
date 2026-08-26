@@ -133,8 +133,8 @@ ladder level 3，根因与处理标准见
   This repo owns the locally-horizontal ground method while camera-solver owns
   direction selection and geometry owns rasterization.
 - remote: <https://github.com/YrralH/hjlib-ground-solver>
-- deps: hjlib-camera `a0071f8c` + hjlib-camera-solver `8930b292` +
-  hjlib-geometry `f42416fa` + hjlib-smpl `e0ac0de6`（当前 pyproject pins）。
+- deps: hjlib-camera `a0071f8c` + hjlib-camera-solver `008bd1ec` +
+  hjlib-geometry `f42416fa` + hjlib-smpl `ac317010`（当前 pyproject pins）。
 
 ## 7. What's open
 
