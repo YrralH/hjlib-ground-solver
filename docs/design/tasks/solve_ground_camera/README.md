@@ -330,3 +330,6 @@ new library APIs.
   the all-in-one `solve_ground_camera` contract with
   `solve_ground_normal_and_camera`, removed observations/D from its input and
   result, and kept `solve_ground_offset` as an explicit downstream stage.
+- 2026-08-28: final mathematical and code re-reviews found no remaining
+  findings. Full ground-solver smoke, both repository pyright checks, direct
+  re-export smokes and the decomposed eight-scene production replay passed.
