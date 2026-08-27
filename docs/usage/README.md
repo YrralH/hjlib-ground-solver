@@ -9,7 +9,7 @@
 - [static_foot_plantar_humor.md](static_foot_plantar_humor.md)：在共同 plantar 高度/速度域上做 HuMoR-style phase-1 聚类。
 - [hj_derived_plantar_zmin.md](hj_derived_plantar_zmin.md)：从左右 plantar 高度取明确非官方的 HJ-derived zmin 地面代理。
 - [vanishing_direction_ground_normal.md](vanishing_direction_ground_normal.md)：从 line→VP sources 或 upright-person lines 求 locally-horizontal camera-space Ground Normal。
-- [ours_ground_baselines.md](ours_ground_baselines.md)：按 frozen Ours Ground baseline 分别求 GN、offset D，或在 centered square-pixel 假设下联合求 camera/GN/D。
+- [ours_ground_baselines.md](ours_ground_baselines.md)：按 frozen Ours Ground baseline 分别求 GN、offset D，或在 centered square-pixel 假设下联合求 camera+GN。
 - 其余 ground solver 入口按输入类型列在本页。
 
 ## 决策树：我有什么 → 调哪个
@@ -25,9 +25,10 @@
                  (底层可单独调: get_KN / get_bias_from_2D_ground_normal /
                   get_projection_loss / uv_to_xyz_via_ground_torch)
 
-我有同一图像的 line→VP + top/bottom observations，K 未知但 fx=fy/光心居中
-    └─ solve_ground_camera
-       -> centered Camera_Intrinsics + camera-up GN + float64 plane
+我有 line→VP，K 未知但 fx=fy/光心居中
+    └─ solve_ground_normal_and_camera
+       -> centered Camera_Intrinsics + camera-up GN
+       再有 top/bottom observations 时显式后接 solve_ground_offset -> plane
 
 我有一路或多路独立 line→VP associations + calibrated K，且地面局部水平
     ├─ 一路 source，使用 frozen exact simple-probe baseline
@@ -127,7 +128,7 @@
 | upright-person top/bottom pixels + weights + K | `fit_person_vertical_direction_evidence` | checked one-VP source + direction receipt |
 | one line→VP source + K, frozen Ours Ground method | `solve_ground_normal` | registered config + simple-probe receipt + camera-up unit GN |
 | top/bottom/confidence/ankle ratio + GN + K | `solve_ground_offset` | registered selection receipt + float64 camera-frame plane |
-| line→VP + same-image person observations，centered square-pixel K 未知 | `solve_ground_camera` | registered camera receipt + offset receipt + plane |
+| line→VP，centered square-pixel K 未知 | `solve_ground_normal_and_camera` | registered camera receipt + camera-up GN |
 
 ## 公共契约
 

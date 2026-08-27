@@ -9,11 +9,11 @@ registered composition:
   produces a camera-up unit Ground Normal;
 - `solve_ground_offset`: top/bottom person observations, that Ground Normal
   and K produce a camera-frame plane `(n_x, n_y, n_z, D)`.
-- `solve_ground_camera`: a line→VP source plus same-image person observations
-  jointly produce centered square-pixel intrinsics, GN and plane offset.
+- `solve_ground_normal_and_camera`: a line→VP source jointly produces centered
+  square-pixel intrinsics and GN; it does not estimate plane offset.
 
 Their stable IDs are `ground_normal_baseline001`,
-`ground_offset_baseline001` and `ground_camera_baseline001`. Config
+`ground_offset_baseline001` and `ground_normal_and_camera_baseline001`. Config
 constructors expose the frozen values;
 unknown IDs fail and list legal values. `hjlib-experiments` directly re-exports
 these owner objects and does not contain a second numeric registry.
@@ -30,12 +30,11 @@ uses equal observation weights, `H_prior=1.27 m`, and the existing D objective
 on `[-5, 80) m` with `0.1 m` spacing. At least three positive-length retained
 top/bottom segments are required.
 
-Camera baseline001 uses the camera-solver centered-focal vertical anchor with
+Normal-and-camera baseline001 uses the camera-solver centered-focal vertical anchor with
 the same `5 / 0.8 / 3° / 0.25 px / 5 / 20` vertical thresholds, at least two
-informative focal neighbors and at most 20 focal-membership refits. It then
-delegates to exact `ground_offset_baseline001`; it does not copy the offset
-numeric registry. `Ground_Camera_Observations` binds person pixels to the line
-source's record ID and image size before numerical execution.
+informative focal neighbors and at most 20 focal-membership refits. Person
+filters, height prior and D search remain exclusively in
+`ground_offset_baseline001`, which callers invoke explicitly afterward.
 
 `Ground_Offset_Selection` binds the immutable original observations, exact
 registered config and a full-length immutable mask. This pure selection seam

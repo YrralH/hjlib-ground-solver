@@ -27,18 +27,17 @@ plane_camera = offset_result.plane_camera_abcd
 
 ```python
 from hjlib_ground_solver import (
-    Ground_Camera_Observations,
-    solve_ground_camera,
+    solve_ground_normal_and_camera,
 )
 
-camera_observations = Ground_Camera_Observations(
-    image_record_id=line_vp_source.line_segments.image_record_id,
-    image_size_wh=line_vp_source.line_segments.image_size_wh,
-    ground_offset_observations=observations,
+camera_normal_result = solve_ground_normal_and_camera(line_vp_source)
+offset_result = solve_ground_offset(
+    observations,
+    camera_normal_result.ground_normal_camera,
+    camera_normal_result.camera_intrinsics,
 )
-camera_result = solve_ground_camera(line_vp_source, camera_observations)
-intrinsics = camera_result.camera_intrinsics
-plane_camera = camera_result.plane_camera_abcd
+intrinsics = camera_normal_result.camera_intrinsics
+plane_camera = offset_result.plane_camera_abcd
 ```
 
 两个入口的默认 ID 分别是 `ground_normal_baseline001` 与
@@ -53,7 +52,8 @@ ground_offset_config())` 可在求 D 前单独取得 full-length retained mask�
 | --- | --- |
 | line→VP source + K | `solve_ground_normal` |
 | top/bottom + confidence/ankle ratio + GN + K | `solve_ground_offset` |
-| line→VP + same-image top/bottom/confidence/ankle，K 未知但 centered square-pixel | `solve_ground_camera` |
+| line→VP，K 未知但 centered square-pixel | `solve_ground_normal_and_camera`，返回 K+GN |
+| 上述 K+GN 再加 person observations | 显式后接 `solve_ground_offset` |
 | 想自己调 H、filter 或 weighting | 使用低层研究入口，不得仍称 `ground_offset_baseline001` |
 
 所有 pixel coordinates 必须与 K 处于同一个 uncropped image frame。GN 必须是 float64
