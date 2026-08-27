@@ -132,10 +132,9 @@ from hjlib_ground_solver.estimate_ground.by_equal_vertical_lines import (
     solve_ground_normal_by_source_weighted_vertical_lines,
 )
 from hjlib_ground_solver.estimate_ground.ours_baseline import (
-    Ground_Camera_Baseline,
-    Ground_Camera_Config,
-    Ground_Camera_Observations,
-    Ground_Camera_Result,
+    Ground_Normal_And_Camera_Baseline,
+    Ground_Normal_And_Camera_Config,
+    Ground_Normal_And_Camera_Result,
     Ground_Normal_Baseline,
     Ground_Normal_Config,
     Ground_Normal_Result,
@@ -146,11 +145,11 @@ from hjlib_ground_solver.estimate_ground.ours_baseline import (
     Ground_Offset_Selection,
     ground_normal_config,
     ground_offset_config,
-    ground_camera_config,
+    ground_normal_and_camera_config,
     select_ground_offset_observations,
     solve_ground_normal,
     solve_ground_offset,
-    solve_ground_camera,
+    solve_ground_normal_and_camera,
 )
 
 __all__ = [
@@ -237,15 +236,14 @@ __all__ = [
     'Ground_Offset_Observations',
     'Ground_Offset_Result',
     'Ground_Offset_Selection',
-    'Ground_Camera_Baseline',
-    'Ground_Camera_Config',
-    'Ground_Camera_Observations',
-    'Ground_Camera_Result',
-    'ground_camera_config',
+    'Ground_Normal_And_Camera_Baseline',
+    'Ground_Normal_And_Camera_Config',
+    'Ground_Normal_And_Camera_Result',
+    'ground_normal_and_camera_config',
     'ground_normal_config',
     'ground_offset_config',
     'select_ground_offset_observations',
     'solve_ground_normal',
     'solve_ground_offset',
-    'solve_ground_camera',
+    'solve_ground_normal_and_camera',
 ]

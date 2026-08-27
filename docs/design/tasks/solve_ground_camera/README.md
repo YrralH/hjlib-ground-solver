@@ -274,6 +274,9 @@ an explicit caller operation rather than hidden behavior in this call.
 
 `hjlib-experiments.high_level_api.ours` directly re-exports the ground-solver
 types and calls. It contains no second implementation and no dataset logic.
+The superseded `Ground_Camera_*`, `ground_camera_config` and
+`solve_ground_camera` names are absent at both public layers; no compatibility
+aliases are retained because the surface was corrected before commit.
 
 ## Smoke-Test Standard
 
@@ -293,6 +296,8 @@ types and calls. It contains no second implementation and no dataset logic.
   ownership, immutability and absence of offset execution.
 - Public exports exist in camera-solver and ground-solver. Experiments tests
   prove direct owner-object identity and absence of a wrapper implementation.
+- Ground-solver and experiments negative export smokes prove all superseded
+  all-in-one camera names are absent.
 - An explicit downstream `solve_ground_offset` composition smoke proves the
   returned K and GN can reproduce the recorded ground evaluation.
 - Existing given-camera Ground Normal and offset baseline tests remain passing.

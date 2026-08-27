@@ -32,8 +32,8 @@ class Ground_Offset_Baseline(StrEnum):
     GROUND_OFFSET_BASELINE001 = 'ground_offset_baseline001'
 
 
-class Ground_Camera_Baseline(StrEnum):
-    GROUND_CAMERA_BASELINE001 = 'ground_camera_baseline001'
+class Ground_Normal_And_Camera_Baseline(StrEnum):
+    GROUND_NORMAL_AND_CAMERA_BASELINE001 = 'ground_normal_and_camera_baseline001'
 
 
 @dataclass(frozen=True, slots=True, init=False)
@@ -120,42 +120,27 @@ class Ground_Offset_Result:
 
 
 @dataclass(frozen=True, slots=True, init=False)
-class Ground_Camera_Config:
-    baseline:Ground_Camera_Baseline
+class Ground_Normal_And_Camera_Config:
+    baseline:Ground_Normal_And_Camera_Baseline
     camera_solver_config:Centered_Focal_Vertical_VP_Config
-    ground_offset_config:Ground_Offset_Config
 
     def __init__(self) -> None:
-        raise TypeError('Ground_Camera_Config is constructed by ground_camera_config')
-
-
-@dataclass(frozen=True, slots=True)
-class Ground_Camera_Observations:
-    image_record_id:str
-    image_size_wh:tuple[int, int]
-    ground_offset_observations:Ground_Offset_Observations
-
-    def __post_init__(self) -> None:
-        if type(self.image_record_id) is not str or len(self.image_record_id) == 0:
-            raise ValueError('image_record_id must be a non-empty string')
-        if (
-                type(self.image_size_wh) is not tuple
-                or len(self.image_size_wh) != 2
-                or any(type(value) is not int or value <= 0 for value in self.image_size_wh)
-            ):
-            raise ValueError('image_size_wh must contain two positive Python ints')
-        if type(self.ground_offset_observations) is not Ground_Offset_Observations:
-            raise ValueError('ground_offset_observations must be Ground_Offset_Observations')
+        raise TypeError(
+            'Ground_Normal_And_Camera_Config is constructed by '
+            'ground_normal_and_camera_config',
+        )
 
 
 @dataclass(frozen=True, slots=True, init=False)
-class Ground_Camera_Result:
-    config:Ground_Camera_Config
+class Ground_Normal_And_Camera_Result:
+    config:Ground_Normal_And_Camera_Config
     camera_result:Centered_Focal_Vertical_VP_Result
-    offset_result:Ground_Offset_Result
 
     def __init__(self) -> None:
-        raise TypeError('Ground_Camera_Result is constructed by solve_ground_camera')
+        raise TypeError(
+            'Ground_Normal_And_Camera_Result is constructed by '
+            'solve_ground_normal_and_camera',
+        )
 
     @property
     def camera_intrinsics(self) -> Camera_Intrinsics:
@@ -164,10 +149,6 @@ class Ground_Camera_Result:
     @property
     def ground_normal_camera(self) -> NDArray[np.float64]:
         return self.camera_result.direction_camera_up
-
-    @property
-    def plane_camera_abcd(self) -> NDArray[np.float64]:
-        return self.offset_result.plane_camera_abcd
 
 
 def owned_float64_array(
@@ -201,14 +182,16 @@ def parse_ground_offset_baseline(
         raise ValueError('unknown ground-offset baseline; legal values: %s' % legal) from error
 
 
-def parse_ground_camera_baseline(
-        baseline:Ground_Camera_Baseline | str,
-    ) -> Ground_Camera_Baseline:
+def parse_ground_normal_and_camera_baseline(
+        baseline:Ground_Normal_And_Camera_Baseline | str,
+    ) -> Ground_Normal_And_Camera_Baseline:
     try:
-        return Ground_Camera_Baseline(baseline)
+        return Ground_Normal_And_Camera_Baseline(baseline)
     except ValueError as error:
-        legal = ', '.join(item.value for item in Ground_Camera_Baseline)
-        raise ValueError('unknown ground-camera baseline; legal values: %s' % legal) from error
+        legal = ', '.join(item.value for item in Ground_Normal_And_Camera_Baseline)
+        raise ValueError(
+            'unknown Ground Normal and camera baseline; legal values: %s' % legal,
+        ) from error
 
 
 def ground_normal_config(
@@ -275,13 +258,13 @@ def ground_offset_config(
     return instance
 
 
-def ground_camera_config(
-        baseline:Ground_Camera_Baseline | str = (
-            Ground_Camera_Baseline.GROUND_CAMERA_BASELINE001
+def ground_normal_and_camera_config(
+        baseline:Ground_Normal_And_Camera_Baseline | str = (
+            Ground_Normal_And_Camera_Baseline.GROUND_NORMAL_AND_CAMERA_BASELINE001
         ),
-    ) -> Ground_Camera_Config:
-    parsed = parse_ground_camera_baseline(baseline)
-    instance = object.__new__(Ground_Camera_Config)
+    ) -> Ground_Normal_And_Camera_Config:
+    parsed = parse_ground_normal_and_camera_baseline(baseline)
+    instance = object.__new__(Ground_Normal_And_Camera_Config)
     object.__setattr__(instance, 'baseline', parsed)
     object.__setattr__(
         instance,
@@ -292,7 +275,6 @@ def ground_camera_config(
             maximum_focal_refit_iterations=20,
         ),
     )
-    object.__setattr__(instance, 'ground_offset_config', ground_offset_config())
     return instance
 
 
@@ -404,56 +386,29 @@ def solve_ground_offset(
     return instance
 
 
-def solve_ground_camera(
+def solve_ground_normal_and_camera(
         source:Vanishing_Direction_Source,
-        observations:Ground_Camera_Observations,
-        baseline:Ground_Camera_Baseline | str = (
-            Ground_Camera_Baseline.GROUND_CAMERA_BASELINE001
+        baseline:Ground_Normal_And_Camera_Baseline | str = (
+            Ground_Normal_And_Camera_Baseline.GROUND_NORMAL_AND_CAMERA_BASELINE001
         ),
-        *,
-        device:torch.device = torch.device('cpu'),
-    ) -> Ground_Camera_Result:
+    ) -> Ground_Normal_And_Camera_Result:
     if type(source) is not Vanishing_Direction_Source:
         raise ValueError('source must be a Vanishing_Direction_Source')
-    if type(observations) is not Ground_Camera_Observations:
-        raise ValueError('observations must be Ground_Camera_Observations')
-    if type(device) is not torch.device:
-        raise ValueError('device must be a torch.device')
-    if observations.image_record_id != source.line_segments.image_record_id:
-        raise ValueError('camera observations and line source record IDs differ')
-    if observations.image_size_wh != source.line_segments.image_size_wh:
-        raise ValueError('camera observations and line source image sizes differ')
-    config = ground_camera_config(baseline)
+    config = ground_normal_and_camera_config(baseline)
     camera_result = solve_centered_focal_and_vertical_vp_by_orthogonal_support(
         source,
         config.camera_solver_config,
     )
-    offset_result = solve_ground_offset(
-        observations.ground_offset_observations,
-        camera_result.direction_camera_up,
-        camera_result.camera_intrinsics,
-        config.ground_offset_config.baseline,
-        device=device,
-    )
-    if not np.array_equal(
-            offset_result.ground_normal_camera,
-            camera_result.direction_camera_up,
-        ):
-        raise ValueError('ground-camera composition did not preserve the camera Ground Normal')
-    if offset_result.selection.config != config.ground_offset_config:
-        raise ValueError('ground-camera composition used a different offset config')
-    instance = object.__new__(Ground_Camera_Result)
+    instance = object.__new__(Ground_Normal_And_Camera_Result)
     object.__setattr__(instance, 'config', config)
     object.__setattr__(instance, 'camera_result', camera_result)
-    object.__setattr__(instance, 'offset_result', offset_result)
     return instance
 
 
 __all__:list[str] = [
-    'Ground_Camera_Baseline',
-    'Ground_Camera_Config',
-    'Ground_Camera_Observations',
-    'Ground_Camera_Result',
+    'Ground_Normal_And_Camera_Baseline',
+    'Ground_Normal_And_Camera_Config',
+    'Ground_Normal_And_Camera_Result',
     'Ground_Normal_Baseline',
     'Ground_Normal_Config',
     'Ground_Normal_Result',
@@ -464,9 +419,9 @@ __all__:list[str] = [
     'Ground_Offset_Selection',
     'ground_normal_config',
     'ground_offset_config',
-    'ground_camera_config',
+    'ground_normal_and_camera_config',
     'select_ground_offset_observations',
     'solve_ground_normal',
     'solve_ground_offset',
-    'solve_ground_camera',
+    'solve_ground_normal_and_camera',
 ]

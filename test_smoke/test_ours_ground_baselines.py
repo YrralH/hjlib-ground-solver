@@ -3,7 +3,6 @@
 import numpy as np
 from numpy.typing import NDArray
 import pytest
-import torch
 from typing import cast
 
 from hjlib_camera import Camera_Intrinsics
@@ -13,9 +12,8 @@ from hjlib_camera_solver import (
     Vanishing_Point_Association,
 )
 from hjlib_ground_solver import (
-    Ground_Camera_Config,
-    Ground_Camera_Observations,
-    Ground_Camera_Result,
+    Ground_Normal_And_Camera_Config,
+    Ground_Normal_And_Camera_Result,
     Ground_Normal_Config,
     Ground_Normal_Result,
     Ground_Offset_Config,
@@ -24,14 +22,14 @@ from hjlib_ground_solver import (
     Ground_Offset_Selection,
     ground_normal_config,
     ground_offset_config,
-    ground_camera_config,
+    ground_normal_and_camera_config,
     select_ground_offset_observations,
     solve_D_search,
     solve_ground_normal,
     solve_ground_offset,
-    solve_ground_camera,
+    solve_ground_normal_and_camera,
 )
-import hjlib_ground_solver.estimate_ground.ours_baseline as ours_baseline_module
+import hjlib_ground_solver as ground_solver_module
 
 
 def make_intrinsics() -> Camera_Intrinsics:
@@ -133,18 +131,17 @@ def test_registered_configs_are_exact_and_unknown_ids_fail() -> None:
     assert (offset.distance_min_m, offset.distance_max_m, offset.distance_step_m) == (
         -5.0, 80.0, 0.1,
     )
-    camera = ground_camera_config()
-    assert camera.baseline.value == 'ground_camera_baseline001'
+    camera = ground_normal_and_camera_config()
+    assert camera.baseline.value == 'ground_normal_and_camera_baseline001'
     assert camera.camera_solver_config.vertical_config == normal.camera_solver_config
     assert camera.camera_solver_config.minimum_orthogonal_neighbor_count == 2
     assert camera.camera_solver_config.maximum_focal_refit_iterations == 20
-    assert camera.ground_offset_config == offset
     with pytest.raises(ValueError, match='legal values'):
         ground_normal_config('unknown')
     with pytest.raises(ValueError, match='legal values'):
         ground_offset_config('unknown')
     with pytest.raises(ValueError, match='legal values'):
-        ground_camera_config('unknown')
+        ground_normal_and_camera_config('unknown')
 
 
 def test_ground_normal_baseline_owns_exact_camera_up_result() -> None:
@@ -248,63 +245,34 @@ def test_ground_offset_rejects_bad_support_and_nonpositive_winner() -> None:
         solve_ground_offset(observations, normal, make_intrinsics())
 
 
-def test_ground_camera_composes_centered_camera_normal_and_offset() -> None:
+def test_ground_normal_and_camera_then_explicit_offset() -> None:
     source, vertical = make_direction_source(camera_ready=True)
-    observations = Ground_Camera_Observations(
-        source.line_segments.image_record_id,
-        source.line_segments.image_size_wh,
-        make_offset_observations(vertical),
-    )
-    original = ours_baseline_module.solve_ground_offset
-    delegated:dict[str, object] = {}
-
-    def observed_offset_call(
-            offset_observations:Ground_Offset_Observations,
-            ground_normal_camera:NDArray[np.float64],
-            intrinsics:Camera_Intrinsics,
-            baseline:object,
-            *,
-            device:torch.device,
-        ) -> Ground_Offset_Result:
-        delegated['intrinsics'] = intrinsics
-        return original(
-            offset_observations,
-            ground_normal_camera,
-            intrinsics,
-            cast(str, baseline),
-            device=device,
-        )
-
-    patch = pytest.MonkeyPatch()
-    patch.setattr(ours_baseline_module, 'solve_ground_offset', observed_offset_call)
-    try:
-        result = solve_ground_camera(source, observations)
-    finally:
-        patch.undo()
+    result = solve_ground_normal_and_camera(source)
     assert result.camera_result.focal_px == pytest.approx(600.0, abs=1e-9)
-    assert delegated['intrinsics'] is result.camera_intrinsics
     np.testing.assert_allclose(result.ground_normal_camera, vertical, atol=1e-12)
-    np.testing.assert_array_equal(
-        result.offset_result.ground_normal_camera,
+    assert not hasattr(result, 'plane_camera_abcd')
+    offset_result = solve_ground_offset(
+        make_offset_observations(vertical),
         result.ground_normal_camera,
+        result.camera_intrinsics,
     )
-    assert result.plane_camera_abcd[3] == pytest.approx(4.0, abs=0.051)
-    assert result.config.ground_offset_config == ground_offset_config()
+    assert offset_result.plane_camera_abcd[3] == pytest.approx(4.0, abs=0.051)
 
 
-def test_ground_camera_binding_and_closed_constructors() -> None:
-    source, vertical = make_direction_source(camera_ready=True)
-    offset = make_offset_observations(vertical)
-    for observations in (
-        Ground_Camera_Observations('another-frame', (640, 480), offset),
-        Ground_Camera_Observations(source.line_segments.image_record_id, (1280, 960), offset),
+def test_ground_normal_and_camera_closed_constructors_and_no_aliases() -> None:
+    with pytest.raises(TypeError, match='constructed by'):
+        Ground_Normal_And_Camera_Config()
+    with pytest.raises(TypeError, match='constructed by'):
+        Ground_Normal_And_Camera_Result()
+    for old_name in (
+        'Ground_Camera_Baseline',
+        'Ground_Camera_Config',
+        'Ground_Camera_Observations',
+        'Ground_Camera_Result',
+        'ground_camera_config',
+        'solve_ground_camera',
     ):
-        with pytest.raises(ValueError, match='differ'):
-            solve_ground_camera(source, observations)
-    with pytest.raises(TypeError, match='constructed by'):
-        Ground_Camera_Config()
-    with pytest.raises(TypeError, match='constructed by'):
-        Ground_Camera_Result()
+        assert not hasattr(ground_solver_module, old_name)
 
 
 def smoke_test_ours_ground_baselines() -> None:
@@ -314,8 +282,8 @@ def smoke_test_ours_ground_baselines() -> None:
     test_ground_offset_preserves_float64_normal_and_solves_positive_D()
     test_low_level_preserve_flag_is_opt_in_and_backward_compatible()
     test_ground_offset_rejects_bad_support_and_nonpositive_winner()
-    test_ground_camera_composes_centered_camera_normal_and_offset()
-    test_ground_camera_binding_and_closed_constructors()
+    test_ground_normal_and_camera_then_explicit_offset()
+    test_ground_normal_and_camera_closed_constructors_and_no_aliases()
 
 
 if __name__ == '__main__':
