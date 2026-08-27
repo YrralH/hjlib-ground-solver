@@ -21,8 +21,8 @@ result records. It does not run ELSED or LIMAP and does not read VirtualCrowd.
 Detector/LIMAP/seed provenance remains an experiment receipt because the
 method-neutral input contract cannot verify those producer identities.
 
-`solve_ground_camera` and the identity-aware offset variant are not part of
-this task.
+`solve_ground_normal_and_camera` and the identity-aware offset variant are not
+part of this task.
 
 ## Public Identity And Sign Contract
 
