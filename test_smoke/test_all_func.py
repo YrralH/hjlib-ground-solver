@@ -28,6 +28,7 @@ from test_person_vertical_line_evidence import (
 from test_equal_vertical_line_ground_normal import (
     smoke_test_equal_vertical_line_ground_normal,
 )
+from test_ours_ground_baselines import smoke_test_ours_ground_baselines
 
 
 def main() -> None:
@@ -53,6 +54,8 @@ def main() -> None:
     print('[OK] person_vertical_line_evidence')
     smoke_test_equal_vertical_line_ground_normal()
     print('[OK] equal_vertical_line_ground_normal')
+    smoke_test_ours_ground_baselines()
+    print('[OK] ours_ground_baselines')
     print('[ALL OK] hjlib-ground-solver smoke tests')
 
 

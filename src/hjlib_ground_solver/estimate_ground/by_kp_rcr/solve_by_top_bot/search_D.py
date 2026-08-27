@@ -50,9 +50,13 @@ def solve_D_search(
     distance_max: float = 80.0,
     distance_step: float = 0.1,
     observation_weights: np.ndarray | None = None,
+    preserve_ground_normal_orientation: bool = False,
 ) -> Union[Tuple[np.ndarray, np.ndarray], Tuple[np.ndarray, np.ndarray, np.ndarray]]:
 
     del D_init
+
+    if type(preserve_ground_normal_orientation) is not bool:
+        raise ValueError('preserve_ground_normal_orientation must be a Python bool')
 
     num_observations = xb.shape[1]
     weights = validated_numpy_observation_weights(
@@ -60,16 +64,20 @@ def solve_D_search(
         num_observations,
     )
 
-    if ground_normal[2] > 0:
-        ground_normal = -1.0 * ground_normal
-    ground_normal_tensor = torch.from_numpy(ground_normal).to(torch.float32).to(device)
-    cam_para_tensor = torch.from_numpy(cam_para).to(torch.float32).to(device)
-    xb_tensor = torch.from_numpy(xb).to(torch.float32).to(device)
-    xt_tensor = torch.from_numpy(xt).to(torch.float32).to(device)
+    tensor_dtype = (
+        torch.float64 if preserve_ground_normal_orientation else torch.float32
+    )
+    ground_normal_solver = np.array(ground_normal, copy=True)
+    if not preserve_ground_normal_orientation and ground_normal_solver[2] > 0:
+        ground_normal_solver = -1.0 * ground_normal_solver
+    ground_normal_tensor = torch.from_numpy(ground_normal_solver).to(tensor_dtype).to(device)
+    cam_para_tensor = torch.from_numpy(np.array(cam_para, copy=True)).to(tensor_dtype).to(device)
+    xb_tensor = torch.from_numpy(np.array(xb, copy=True)).to(tensor_dtype).to(device)
+    xt_tensor = torch.from_numpy(np.array(xt, copy=True)).to(tensor_dtype).to(device)
     weights_tensor = (
         None
         if weights is None
-        else torch.from_numpy(weights).to(torch.float32).to(device)
+        else torch.from_numpy(weights).to(tensor_dtype).to(device)
     )
 
     def forward(
@@ -80,7 +88,7 @@ def solve_D_search(
             Tuple[int, torch.Tensor, torch.Tensor],
             Tuple[int, torch.Tensor, torch.Tensor, Optional[torch.Tensor]],
         ]:
-        ground_tensor = torch.zeros((4)).to(torch.float32).to(device)
+        ground_tensor = torch.zeros((4), dtype=tensor_dtype, device=device)
         ground_tensor[0:3] = ground_normal_tensor
         ground_tensor[3] = D
 
@@ -159,7 +167,7 @@ def solve_D_search(
 
     loss_ret = loss_mod + loss_pixel
 
-    ground_tensor = torch.zeros((4)).to(torch.float32).to(device)
+    ground_tensor = torch.zeros((4), dtype=tensor_dtype, device=device)
     ground_tensor[0:3] = ground_normal_tensor
     ground_tensor[3] = d_best
 

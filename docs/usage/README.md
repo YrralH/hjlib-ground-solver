@@ -9,12 +9,14 @@
 - [static_foot_plantar_humor.md](static_foot_plantar_humor.md)：在共同 plantar 高度/速度域上做 HuMoR-style phase-1 聚类。
 - [hj_derived_plantar_zmin.md](hj_derived_plantar_zmin.md)：从左右 plantar 高度取明确非官方的 HJ-derived zmin 地面代理。
 - [vanishing_direction_ground_normal.md](vanishing_direction_ground_normal.md)：从 line→VP sources 或 upright-person lines 求 locally-horizontal camera-space Ground Normal。
+- [ours_ground_baselines.md](ours_ground_baselines.md)：按 frozen Ours Ground baseline 分别求 GN、offset D，或在 centered square-pixel 假设下联合求 camera/GN/D。
 - 其余 ground solver 入口按输入类型列在本页。
 
 ## 决策树：我有什么 → 调哪个
 
 ```
 我有 top/bottom 2D 关键点 (一群站立的人) + 相机 K
+    ├─ 已有 camera-up GN，使用 frozen Ours Ground offset -> solve_ground_offset
     ├─ 直接等权求解 -> solve_ground_param_by_top_bottom_given_K
     └─ 想降低空间重复观测的支配 -> compute_ground_observation_kde_density
                                       (固定局部尺度才用 compute_ground_observation_density)
@@ -23,7 +25,13 @@
                  (底层可单独调: get_KN / get_bias_from_2D_ground_normal /
                   get_projection_loss / uv_to_xyz_via_ground_torch)
 
+我有同一图像的 line→VP + top/bottom observations，K 未知但 fx=fy/光心居中
+    └─ solve_ground_camera
+       -> centered Camera_Intrinsics + camera-up GN + float64 plane
+
 我有一路或多路独立 line→VP associations + calibrated K，且地面局部水平
+    ├─ 一路 source，使用 frozen exact simple-probe baseline
+    │  └─ solve_ground_normal
     ├─ 一路 source，复用 max |camera y| baseline
     │  └─ solve_ground_normal_by_vertical_vp_selection
     ├─ 一路或多路 full sources，复用 discrete orthogonal consensus
@@ -117,6 +125,9 @@
 | preselected vertical 2D segments + K | `solve_ground_normal_by_equal_weight_vertical_lines` | equal-line TLS unit normal + source/hash/count/scatter ledger |
 | preselected vertical 2D segment sources + fixed fractions + K | `solve_ground_normal_by_source_weighted_vertical_lines` | source-total-weighted TLS unit normal + fraction/source/hash/count/scatter ledger |
 | upright-person top/bottom pixels + weights + K | `fit_person_vertical_direction_evidence` | checked one-VP source + direction receipt |
+| one line→VP source + K, frozen Ours Ground method | `solve_ground_normal` | registered config + simple-probe receipt + camera-up unit GN |
+| top/bottom/confidence/ankle ratio + GN + K | `solve_ground_offset` | registered selection receipt + float64 camera-frame plane |
+| line→VP + same-image person observations，centered square-pixel K 未知 | `solve_ground_camera` | registered camera receipt + offset receipt + plane |
 
 ## 公共契约
 

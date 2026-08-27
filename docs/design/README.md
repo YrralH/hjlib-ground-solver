@@ -61,6 +61,7 @@ hjlib-ground-solver/
 │       ├── by_person_vertical_lines.py       weighted person top/bottom RCR -> one checked VP source
 │       ├── by_equal_vertical_lines.py         equal-line / source-total-weighted vertical lines -> locally-horizontal GN
 │       ├── ground_normal_contract.py          shared immutable/unit/exact-winner GN invariant
+│       ├── ours_baseline.py                   registered given-camera GN / offset baselines
 │       └── by_kp_rcr/
 │           ├── compute_KN_by_vertical_lines.py  竖直线消失点 KN + 过滤 (内联 3 个 utils)
 │           ├── observation_weight.py            optional NumPy/torch positive-weight boundary validation
@@ -81,6 +82,7 @@ hjlib-ground-solver/
 4. [handoff.md](handoff.md) —— deferred Tier-2 与跨仓 handoff。
 5. [tasks/equal_line_vertical_ground_normal/README.md](tasks/equal_line_vertical_ground_normal/README.md) —— equal-per-line vertical fit 的 Ground 解释。
 6. [tasks/source_weighted_vertical_ground_normal/README.md](tasks/source_weighted_vertical_ground_normal/README.md) —— source-total-weighted vertical fit 的 Ground 解释。
+7. [ours_ground_baselines.md](ours_ground_baselines.md) —— frozen Ours Ground GN/offset IDs、selection seam 与 orientation contract。
 
 ## 4. 关键设计点
 
@@ -118,7 +120,7 @@ ladder level 3，根因与处理标准见
 ## 6. State of the world
 
 - pyright: **strict, 0 errors**（见 §5 的规则豁免）。
-- 测试: `test_smoke/` **114 passed**；`get_ground_by_smpls_on_the_ground`
+- 测试: `test_smoke/` **122 passed**；`get_ground_by_smpls_on_the_ground`
   需真实 SMPL 模型，留给数据依赖测试（见 [test.md](test.md)）。
 - density/weighted RCR：公开 API、immutable evidence 与 synthetic hand-oracle
   smoke 已实现；VirtualCrowd real operation 由 `hjlib-evaluation` 持有。
@@ -130,6 +132,10 @@ ladder level 3，根因与处理标准见
   Equal-line and fixed source-total weighted vertical-line interpretations are
   implemented at [`tasks/equal_line_vertical_ground_normal/`](tasks/equal_line_vertical_ground_normal/)
   and [`tasks/source_weighted_vertical_ground_normal/`](tasks/source_weighted_vertical_ground_normal/).
+  Registered given-camera stages and centered-focal Ours Ground composition are implemented at
+  [ours_ground_baselines.md](ours_ground_baselines.md); empirical selection is
+  owned by `hjlib-experiments` Campaign 04. Synthetic contracts and an 8/8
+  VirtualCrowd V4 artifact replay are green.
   This repo owns the locally-horizontal ground method while camera-solver owns
   direction selection and geometry owns rasterization.
 - remote: <https://github.com/YrralH/hjlib-ground-solver>
@@ -137,6 +143,10 @@ ladder level 3，根因与处理标准见
   hjlib-geometry `f42416fa` + hjlib-smpl `ac317010`（当前 pyproject pins）。
 
 ## 7. What's open
+
+- **Ours Ground continuation**: the identity-aware offset experiment remains
+  pending and must reuse the frozen selection seam without changing
+  `ground_offset_baseline001`.
 
 - **AMASS mesh lower-envelope task**: the implemented/reviewed Layered Design residence is
   [`tasks/amass-ground-zmin-family/`](tasks/amass-ground-zmin-family/). It owns
