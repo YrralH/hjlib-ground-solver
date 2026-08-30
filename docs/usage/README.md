@@ -10,6 +10,7 @@
 - [hj_derived_plantar_zmin.md](hj_derived_plantar_zmin.md)：从左右 plantar 高度取明确非官方的 HJ-derived zmin 地面代理。
 - [vanishing_direction_ground_normal.md](vanishing_direction_ground_normal.md)：从 line→VP sources 或 upright-person lines 求 locally-horizontal camera-space Ground Normal。
 - [ours_ground_baselines.md](ours_ground_baselines.md)：按 frozen Ours Ground baseline 分别求 GN、offset D，或在 centered square-pixel 假设下联合求 camera+GN。
+- [person_ankle_plane_distribution.md](person_ankle_plane_distribution.md)：**暂时废弃的 V1**；仅供历史结果复现与 regression，不作为当前 ankle-ground 方法入口。
 - 其余 ground solver 入口按输入类型列在本页。
 
 ## 决策树：我有什么 → 调哪个
@@ -92,6 +93,12 @@
     └─ estimate_hj_derived_plantar_zmin_ground
        -> frozen HJ-derived nonofficial height + selected side/track-frame evidence
        (不推断 contact；不是 AMASS 官方 ground)
+
+我有一个 physical person 的完整 left/right ankle world tracks + old ground planes
+    └─ infer_person_ankle_plane_distribution
+       -> local clusters + global hypotheses + transition evidence + typed status
+       (`single_support_plane` 才有 candidate_height_in_meter；identity/view
+        selection 与 config evaluation 在 caller)
 
 我有一张深度图 + 相机 K
     ├─ get_pixel_features_of_depth_map -> filter_vertical_and_horizontal_features  (边缘特征)

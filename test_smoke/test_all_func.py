@@ -29,6 +29,9 @@ from test_equal_vertical_line_ground_normal import (
     smoke_test_equal_vertical_line_ground_normal,
 )
 from test_ours_ground_baselines import smoke_test_ours_ground_baselines
+from test_person_ankle_plane_distribution import (
+    smoke_test_person_ankle_plane_distribution,
+)
 
 
 def main() -> None:
@@ -56,6 +59,8 @@ def main() -> None:
     print('[OK] equal_vertical_line_ground_normal')
     smoke_test_ours_ground_baselines()
     print('[OK] ours_ground_baselines')
+    smoke_test_person_ankle_plane_distribution()
+    print('[OK] person_ankle_plane_distribution')
     print('[ALL OK] hjlib-ground-solver smoke tests')
 
 

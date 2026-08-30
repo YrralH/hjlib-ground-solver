@@ -16,6 +16,9 @@ Ground Normal；也可把预选出的多路 vertical 2D segments 按逐线等权
 transform / by_param 等已知地面后的操作）在 hjlib-geometry；本仓只装**求解**侧。
 Lower-envelope / static-foot candidate 只是观测统计；另有显式标为
 `hj_derived_nonofficial` 的 plantar-zmin 地面高度代理，均不声称官方 ground truth。
+本仓暂时保留已废弃的 dataset-neutral per-person ankle-plane V1 inference，
+仅用于历史 provenance 与 regression；它不是当前可继续扩展的方法。当前唯一 active
+路线住在 `hjlib-dataset-std` Campaign 02，从 temporal low-basin proposal 开始。
 
 ## 安装
 
@@ -54,6 +57,8 @@ assert objective >= 0.0
 ## 文档
 
 - 怎么调用：[docs/usage/README.md](docs/usage/README.md)
+- Per-person ankle-plane distribution：
+  [docs/usage/person_ankle_plane_distribution.md](docs/usage/person_ankle_plane_distribution.md)
 - 怎么修改 / 设计点：[docs/design/README.md](docs/design/README.md)
 - 迁移记录（file-mapping + 死代码清理）：[docs/design/migration.md](docs/design/migration.md)
 - 未迁部分（Tier-2 / DRU-9）：[docs/design/handoff.md](docs/design/handoff.md)

@@ -2,6 +2,10 @@
 
 本仓**唯一** onboarding 入口（无 `docs/CLAUDE.md`）。改本仓前先读这里。
 
+> `estimate_ground/person_ankle_plane/` 的 distribution-first V1 已暂时废弃并冻结，
+> 只保留历史实现和 regression。当前 ankle-ground 方法不在本仓沿 V1 继续开发；唯一
+> active 路线见 `hjlib-dataset-std` Campaign 02 的 temporal low-basin/getG task。
+
 ## 1. Scope
 
 **做什么**：地面的"求解 / 主动推断"侧 —— 从 SMPL pillars、top-bottom 关键点、
@@ -49,6 +53,7 @@ hjlib-ground-solver/
 │   ├── hvip/
 │   │   └── get_3d_info_from_hvip_2d.py     2D HVIP + RT/K -> 3D world HVIP + 地面 (含 solve)
 │   └── estimate_ground/
+│       ├── person_ankle_plane/                per-person local clusters -> global height hypotheses -> typed status
 │       ├── observation_density.py              provisional-plane exact-LOO KDE / kNN density + immutable weight evidence
 │       ├── by_mesh_lower_envelope.py        full-mesh per-frame minima + exact coverage candidates
 │       ├── by_mesh_lower_envelope_peeling.py iterative separated low-prefix peeling
@@ -83,6 +88,9 @@ hjlib-ground-solver/
 5. [tasks/equal_line_vertical_ground_normal/README.md](tasks/equal_line_vertical_ground_normal/README.md) —— equal-per-line vertical fit 的 Ground 解释。
 6. [tasks/source_weighted_vertical_ground_normal/README.md](tasks/source_weighted_vertical_ground_normal/README.md) —— source-total-weighted vertical fit 的 Ground 解释。
 7. [ours_ground_baselines.md](ours_ground_baselines.md) —— frozen Ours Ground GN/offset IDs、selection seam 与 orientation contract。
+8. [dataset-std task: person ankle-plane distribution V1](../../../hjlib-dataset-std/docs/design/tasks/person_ankle_plane_distribution/README.md)
+   —— 已迁移的 failed predecessor task design history、数学契约与测试标准；本仓暂留
+   V1 实现，待 replacement design 后统一清理。
 
 ## 4. 关键设计点
 
@@ -98,6 +106,13 @@ hjlib-ground-solver/
 - **density-balanced RCR**：method-neutral provisional-plane density、immutable
   intermediate 与 weighted solver contract 见
   [observation_density.md](observation_density.md)。dataset selection 与结果评估不进本仓。
+- **Per-person ankle-plane distribution V1 implementation**：本仓暂时保留从一个 physical person
+  的 world-ankle runs + oriented source planes 到 immutable local/global evidence
+  和 typed result 的数值层。physical-scene/person identity、canonical-view
+  selection、export I/O、config selection 和结果评估都在上层。算法不会 refit
+  normal，也不会把一个 static local episode 自动提升为 scalar ground；这个
+  identifiability boundary 是 V1 public contract，不是 dataset special case。其
+  task residence 已转到 `hjlib-dataset-std`，新设计不由本页预先决定 code home。
 
 ## 5. Family conventions inherited
 
@@ -120,10 +135,15 @@ ladder level 3，根因与处理标准见
 ## 6. State of the world
 
 - pyright: **strict, 0 errors**（见 §5 的规则豁免）。
-- 测试: `test_smoke/` **122 passed**；`get_ground_by_smpls_on_the_ground`
+- 测试: `test_smoke/` **142 passed**；`get_ground_by_smpls_on_the_ground`
   需真实 SMPL 模型，留给数据依赖测试（见 [test.md](test.md)）。
 - density/weighted RCR：公开 API、immutable evidence 与 synthetic hand-oracle
   smoke 已实现；VirtualCrowd real operation 由 `hjlib-evaluation` 持有。
+- per-person ankle-plane distribution：public immutable contracts、local product
+  metric clustering、complete-link hypotheses、recurrence/transition status、20
+  focused mathematical tests 已实现并通过专项 review。Campaign 06 的首轮
+  common-grid application 因 single-run recurrence identifiability 返回
+  `method_indeterminate`；这不改变 API 的 typed non-candidate behavior。
 - **Ground Normal from vanishing-direction evidence**: robust interpretation is implemented and reviewed
   at [`tasks/vanishing_direction_ground_normal/`](tasks/vanishing_direction_ground_normal/);
   single-source/discrete/role-aware interpretations plus person-line evidence
@@ -139,8 +159,8 @@ ladder level 3，根因与处理标准见
   This repo owns the locally-horizontal ground method while camera-solver owns
   direction selection and geometry owns rasterization.
 - remote: <https://github.com/YrralH/hjlib-ground-solver>
-- deps: hjlib-camera `a0071f8c` + hjlib-camera-solver `008bd1ec` +
-  hjlib-geometry `f42416fa` + hjlib-smpl `ac317010`（当前 pyproject pins）。
+- deps: hjlib-camera + hjlib-camera-solver + hjlib-geometry + hjlib-smpl；精确
+  revisions 只以 `pyproject.toml` 的当前 pins 为准，不在设计摘要复制第二份。
 
 ## 7. What's open
 
