@@ -16,7 +16,10 @@ static-foot comparison candidates，以及 provenance 固定为
 在 explicit locally-horizontal scene assumption 下，本仓还负责把 camera-solver
 选出的 single-source / discrete-consensus / robust calibrated vertical 解释为
 camera-space Ground Normal，并从 fixed-camera upright-person top/bottom lines 构造
-vertical evidence；不解 slope、offset 或 camera height。
+vertical evidence。注册的 Ours Ground 方法进一步支持：在 given camera + GN 下从
+top/bottom observations 估计 plane offset `D`，以及在 centered square-pixel 假设下
+联合估计 camera intrinsics + GN。它不从 line evidence 另解任意 ground slope；GN
+始终是 locally-horizontal camera-up 解释。
 
 **不做什么**：
 
@@ -66,7 +69,7 @@ hjlib-ground-solver/
 │       ├── by_person_vertical_lines.py       weighted person top/bottom RCR -> one checked VP source
 │       ├── by_equal_vertical_lines.py         equal-line / source-total-weighted vertical lines -> locally-horizontal GN
 │       ├── ground_normal_contract.py          shared immutable/unit/exact-winner GN invariant
-│       ├── ours_baseline.py                   registered given-camera GN / offset baselines
+│       ├── ours_baseline.py                   registered given-camera GN/offset + centered-focal camera/GN baselines
 │       └── by_kp_rcr/
 │           ├── compute_KN_by_vertical_lines.py  竖直线消失点 KN + 过滤 (内联 3 个 utils)
 │           ├── observation_weight.py            optional NumPy/torch positive-weight boundary validation
@@ -87,7 +90,7 @@ hjlib-ground-solver/
 4. [handoff.md](handoff.md) —— deferred Tier-2 与跨仓 handoff。
 5. [tasks/equal_line_vertical_ground_normal/README.md](tasks/equal_line_vertical_ground_normal/README.md) —— equal-per-line vertical fit 的 Ground 解释。
 6. [tasks/source_weighted_vertical_ground_normal/README.md](tasks/source_weighted_vertical_ground_normal/README.md) —— source-total-weighted vertical fit 的 Ground 解释。
-7. [ours_ground_baselines.md](ours_ground_baselines.md) —— frozen Ours Ground GN/offset IDs、selection seam 与 orientation contract。
+7. [ours_ground_baselines.md](ours_ground_baselines.md) —— frozen Ours Ground GN/offset、camera+GN IDs、selection seam 与 orientation contract。
 8. [dataset-std task: person ankle-plane distribution V1](../../../hjlib-dataset-std/docs/design/tasks/person_ankle_plane_distribution/README.md)
    —— 已迁移的 failed predecessor task design history、数学契约与测试标准；本仓暂留
    V1 实现，待 replacement design 后统一清理。

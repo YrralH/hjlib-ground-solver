@@ -206,10 +206,13 @@ Ground_Offset_Result
   objective: float
 ```
 
-Config/result constructors validate exact owner types, registered-config
-identity, shapes, finiteness, immutability and cross-field consistency. The GN
-result must exactly equal its nested camera result. The offset result's plane
-normal must exactly equal its recorded input GN.
+Public config/result constructors are closed; callers obtain them only from the
+registered config accessors、selector and solve functions. Those owner
+functions validate input types、registered-config identity、shapes and
+finiteness, then publish immutable arrays. Returned GN exactly equals its
+nested camera result，and the offset result's plane normal exactly equals its
+recorded input GN. Python-level `object.__new__` forgery is outside the public
+constructor contract.
 
 The module composes the camera-solver simple VP primitive and
 `solve_D_search`. `solve_D_search` gains the exact keyword
@@ -232,7 +235,9 @@ uses float64 and preserves the supplied normal exactly. This baseline passes
   flip or a float32 round trip.
 - A synthetic nonpositive full-grid winner proves explicit failure instead of
   a positive-only second search.
-- Result constructors reject forged masks, normals, planes and configs.
+- Public config/result constructors reject direct construction；selector and
+  solve tests verify retained-mask、GN、plane and config relations on owner-built
+  results.
 - Public exports and experiment high-level re-exports resolve to the same
   owner objects without a second numeric registry.
 - Targeted smoke and strict pyright pass in every affected repository.

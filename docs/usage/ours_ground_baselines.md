@@ -1,4 +1,4 @@
-# 给定 K 求 Ground Normal 与 offset
+# 按是否给定 K 求 Ground Normal、camera 与 offset
 
 ```python
 from hjlib_ground_solver import (
@@ -27,10 +27,18 @@ plane_camera = offset_result.plane_camera_abcd
 
 ```python
 from hjlib_ground_solver import (
+    Ground_Offset_Observations,
     solve_ground_normal_and_camera,
+    solve_ground_offset,
 )
 
 camera_normal_result = solve_ground_normal_and_camera(line_vp_source)
+observations = Ground_Offset_Observations(
+    top_xy_px=shoulder_midpoints,
+    bottom_xy_px=ankle_midpoints,
+    confidence=person_confidence,
+    ankle_ratio=ankle_pair_distance_over_bbox_width,
+)
 offset_result = solve_ground_offset(
     observations,
     camera_normal_result.ground_normal_camera,
@@ -40,9 +48,10 @@ intrinsics = camera_normal_result.camera_intrinsics
 plane_camera = offset_result.plane_camera_abcd
 ```
 
-两个入口的默认 ID 分别是 `ground_normal_baseline001` 与
-`ground_offset_baseline001`。可先调用 `ground_normal_config()` / `ground_offset_config()`
-查看 frozen config；不要在调用处复制数值。
+三个入口的默认 ID 分别是 `ground_normal_baseline001`、
+`ground_offset_baseline001` 与 `ground_normal_and_camera_baseline001`。可先调用
+`ground_normal_config()`、`ground_offset_config()` 或
+`ground_normal_and_camera_config()` 查看 frozen config；不要在调用处复制数值。
 
 offset 使用 strict `confidence > 4.3`、strict `ankle_ratio < 0.20`、unweighted
 observations 与 `H_prior=1.27 m`。`select_ground_offset_observations(observations,
