@@ -36,4 +36,4 @@ description_updated = '2026-08-25'
 hjlib-camera = { path = '../hjlib-camera', commit = 'a0071f8cc045d759f9c649f472ed198c2d61d04e' }
 hjlib-camera-solver = { path = '../hjlib-camera-solver', commit = "f24de86f009e573ce096d11e1cbd8c57b298da8c" }
 hjlib-geometry = { path = '../hjlib-geometry', commit = "6ebc8ed2d59c5a0f4d622ca0e916dfb9241d47ee" }
-hjlib-smpl = { path = '../hjlib-smpl', commit = "a4b1d37fab7f065d70990481a1c08846a43cc00b" }
+hjlib-smpl = { path = '../hjlib-smpl', commit = "d7c5c78ec93de30235f390b325f3394db5e9cf51" }
