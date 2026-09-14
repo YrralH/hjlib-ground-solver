@@ -131,6 +131,14 @@ from hjlib_ground_solver.estimate_ground.by_equal_vertical_lines import (
     solve_ground_normal_by_equal_weight_vertical_lines,
     solve_ground_normal_by_source_weighted_vertical_lines,
 )
+from hjlib_ground_solver.estimate_ground.by_person_height_consensus import (
+    Person_Height_Consensus_Config,
+    Person_Height_Consensus_Observations,
+    Person_Height_Consensus_Result,
+    Power8_IPose_Measurements,
+    compute_power8_ipose_measurements,
+    solve_ground_offset_by_person_height_consensus,
+)
 from hjlib_ground_solver.estimate_ground.ours_baseline import (
     Ground_Normal_And_Camera_Baseline,
     Ground_Normal_And_Camera_Config,
@@ -255,6 +263,12 @@ __all__ = [
     'solve_ground_normal_by_equal_weight_vertical_lines',
     'Source_Weighted_Vertical_Line_Ground_Normal_Result',
     'solve_ground_normal_by_source_weighted_vertical_lines',
+    'Person_Height_Consensus_Config',
+    'Person_Height_Consensus_Observations',
+    'Person_Height_Consensus_Result',
+    'Power8_IPose_Measurements',
+    'compute_power8_ipose_measurements',
+    'solve_ground_offset_by_person_height_consensus',
     'Ground_Normal_Baseline',
     'Ground_Normal_Config',
     'Ground_Normal_Result',

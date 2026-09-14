@@ -32,6 +32,9 @@ from test_ours_ground_baselines import smoke_test_ours_ground_baselines
 from test_person_ankle_plane_distribution import (
     smoke_test_person_ankle_plane_distribution,
 )
+from test_person_height_consensus_ground_offset import (
+    smoke_test_person_height_consensus_ground_offset,
+)
 
 
 def main() -> None:
@@ -61,6 +64,8 @@ def main() -> None:
     print('[OK] ours_ground_baselines')
     smoke_test_person_ankle_plane_distribution()
     print('[OK] person_ankle_plane_distribution')
+    smoke_test_person_height_consensus_ground_offset()
+    print('[OK] person_height_consensus_ground_offset')
     print('[ALL OK] hjlib-ground-solver smoke tests')
 
 

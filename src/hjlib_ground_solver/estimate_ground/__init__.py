@@ -66,6 +66,14 @@ from hjlib_ground_solver.estimate_ground.by_equal_vertical_lines import (
     solve_ground_normal_by_equal_weight_vertical_lines,
     solve_ground_normal_by_source_weighted_vertical_lines,
 )
+from hjlib_ground_solver.estimate_ground.by_person_height_consensus import (
+    Person_Height_Consensus_Config,
+    Person_Height_Consensus_Observations,
+    Person_Height_Consensus_Result,
+    Power8_IPose_Measurements,
+    compute_power8_ipose_measurements,
+    solve_ground_offset_by_person_height_consensus,
+)
 # Temporarily deprecated V1 exports retained for historical compatibility.
 from hjlib_ground_solver.estimate_ground.person_ankle_plane import (
     Person_Ankle_Foot_Shape,
@@ -140,6 +148,12 @@ __all__ = [
     'solve_ground_normal_by_equal_weight_vertical_lines',
     'Source_Weighted_Vertical_Line_Ground_Normal_Result',
     'solve_ground_normal_by_source_weighted_vertical_lines',
+    'Person_Height_Consensus_Config',
+    'Person_Height_Consensus_Observations',
+    'Person_Height_Consensus_Result',
+    'Power8_IPose_Measurements',
+    'compute_power8_ipose_measurements',
+    'solve_ground_offset_by_person_height_consensus',
     'Person_Ankle_Foot_Shape',
     'Person_Ankle_Foot_Side',
     'Person_Ankle_Global_Config',
