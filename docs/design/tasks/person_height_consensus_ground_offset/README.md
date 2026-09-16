@@ -1,119 +1,81 @@
 # Person-Height Consensus Ground Offset
 
+State: **incomplete; do not use before method redesign**, user disposition
+2026-09-15. The reviewed implementation below is retained as frozen historical
+V1 evidence. Its one-scene-mean-height scale constraint was implemented before
+the intended joint constraint over different per-person heights was accepted.
+
 ## Requirements
 
-`hjlib-ground-solver` owns the dataset-independent geometry and aggregation.
-The implementation lives in
-`src/hjlib_ground_solver/estimate_ground/by_person_height_consensus/` and is
-an additive public API. It must not change `solve_ground_offset`,
-`ground_offset_baseline001`, or the temporarily deprecated
-`person_ankle_plane` V1.
+`hjlib-ground-solver` 负责 dataset-independent geometry 与 aggregation。实现住在
+`src/hjlib_ground_solver/estimate_ground/by_person_height_consensus/`，作为 additive
+public API；不得修改 `solve_ground_offset`、`ground_offset_baseline001` 或已废弃的
+`person_ankle_plane` V1。
 
-Inputs are finite, explicitly named left/right shoulder, hip, knee, and ankle
-2D points in the same uncropped pixel frame as a supplied nonsingular camera
-matrix, person/frame identities, a
-supplied camera-up unit Ground Normal, and a positive retained-person
-trimmed-mean equivalent-height prior. Dataset loading, track/window selection, GT
-ground, metric evaluation, and hyperparameter calibration remain outside this
-library.
+输入是同一 uncropped pixel frame 中的具名双侧 shoulder/hip/knee/ankle 2D points、
+person/frame identity、nonsingular K、camera-up unit GN，以及 positive retained-person
+trimmed-mean equivalent-height prior。dataset loading、window selection、GT ground、
+evaluation 与 hyperparameter calibration 留在 library 外部。
 
 ## Mathematical Architecture
 
-For each already-selected pose, define shoulder and hip midpoints. Let the
-torso length be the shoulder-to-hip image distance and let each leg length be
-the hip-to-knee plus knee-to-ankle chain. The power-8 I-Pose Height is
+对每条 pose，以 shoulder/hip midpoint 定义 torso。左右 leg length 各为
+hip-to-knee 加 knee-to-ankle，power-8 I-Pose Height 为：
 
 ```text
 h = torso + ((left_leg^8 + right_leg^8) / 2)^(1/8).
 ```
 
-Let `v = K n` be the homogeneous vertical vanishing point/direction and `s` the
-shoulder midpoint. Define the projective vertical image direction
-`d = (v_xy - s v_z) / ||v_xy - s v_z||`; reject a vanishing direction at the
-shoulder. Its sign is oriented toward the observed ankle midpoint, although
-that sign does not change orthogonal projection. Project both ankles onto the
-line `{s + alpha d}` and average the two projections to obtain the corrected
-bottom `b`. This construction uses only 2D keypoints, `K`, and the supplied
-Ground Normal.
+令 `v = K n`，`s` 为 shoulder midpoint。projective vertical image direction 为
+`d = (v_xy - s v_z) / ||v_xy - s v_z||`，方向符号朝 observed ankle midpoint。
+两只 ankle 分别正交投影到 `{s + alpha d}`，两个投影点的中点是 corrected bottom
+`b`。该构造只使用 2D joints、K 与 supplied GN。
 
-The articulated-chain `h` is a heuristic effective pixel height under a
-virtual-upright approximation. It is not claimed to equal the exact projection
-of a physical straight 3D segment for a bent or walking pose. Correspondingly,
-the recovered quantity is an implied effective `H/D`; algebraic closure of the
-virtual model does not establish anthropometric accuracy.
-
-For homogeneous bottom ray `r = K^-1 [b_x,b_y,1]`, plane
-`n dot X + D = 0`, and equivalent vertical 3D height `H`, write `q = H/D`.
-The bottom at unit offset is `X_b(1) = -r/(n dot r)`. Equating the projected
-vertical segment length to `h` gives
+power-8 `h` 是 walking pose 的 virtual-upright heuristic，不是精确 physical 3D
+height。对 `r = K^-1 [b_x,b_y,1]`、plane `n dot X + D = 0` 和 `q = H/D`，解析式为：
 
 ```text
 q = h * (-1 / (n dot r)) / (||v_xy - b v_z|| - h v_z).
 ```
 
-Use a fixed `1e-12` geometry epsilon. Require `n dot r < -epsilon`, nonzero
-projective vertical length, positive ratio denominator, positive finite ratio,
-and positive virtual-top camera depth. Invalid rows are removed and their input
-indices are reported. Persons below the caller-supplied minimum valid-frame
-count are removed and reported; require a caller-supplied minimum retained
-person count. For every retained person, sort its frame ratios and remove
-`floor(0.05 N)` values from each tail, then take an equal-frame mean. Apply the
-same middle-90% rule to the person ratios with equal-person weight and report
-the person retained mask. Input `(person_id, frame_id)` pairs must be unique;
-input observations and person outputs use ascending `(person, frame)` and
-ascending person order respectively. `minimum_valid_frames_per_person` and
-`minimum_retained_person_count` are explicit positive configuration fields.
-When `floor(0.05 N)` is zero, no row is trimmed. Given retained-person
-trimmed-mean equivalent height `H_mean`, recover
+使用固定 `1e-12` geometry epsilon。非正 I-Pose Height、shoulder 处未定义的
+vertical direction、非 positive-depth ray、非正 denominator/ratio 或 virtual-top depth
+都只令该 observation 失效；measurement 与 result 分别以 `NaN + valid mask` 保留原轴。
+
+每个人对有效 frame ratios 排序，从每端裁 `floor(0.05 N)` 后等 frame 求 mean。
+eligible people 再按人等权执行同样的 middle-90% mean。scene trimming 后必须仍达到
+caller-supplied minimum retained-person count。给定 retained-person trimmed mean height
+`H_mean` 后：
 
 ```text
 D = H_mean / q_scene
 H_person = D * q_person.
 ```
 
-The result preserves the original observation axis: invalid implied ratios are
-`NaN` and an immutable valid mask distinguishes them. It reports every input
-person's post-geometry support, eligibility, ratio/height (`NaN` when
-ineligible), the scene aggregation mask and ratio, and `[n, D]`. `H_mean` constrains the
-trim-retained persons rather than the untrimmed reported population. Absolute scale is
-unidentifiable without `H_mean`; this is an explicit input rather than an
-implicit constant.
+没有 `H_mean` 时绝对 scale 不可识别。输入 `(person_id, frame_id)` 唯一且按升序；
+result 检查 observation/person masks、support counts、ratios、heights 与 metric scale
+互相一致。
 
 ## Code Architecture
 
-- `contract.py` owns immutable ndarray contracts for explicitly named joint
-  pairs, person/frame identity, solver configuration, and result records. It
-  does not own or repeat a COCO joint vocabulary.
-- `ipose.py` computes the power-8 I-Pose Height with a max-normalized power mean
-  and the corrected bottom for a caller-selected pose population. Confidence
-  selection remains with the caller.
-- `solve.py` validates camera geometry, computes `H/D`, performs the two-level
-  middle-90% aggregation, and applies a supplied mean height.
-- Package and repository `__init__.py` files re-export the additive API.
+- `contract.py`：immutable named-joint observations、config、measurement/result contracts；
+  不复制 COCO vocabulary。
+- `ipose.py`：stable power-8 I-Pose 与 corrected bottom；不做 confidence selection。
+- `solve.py`：projective inversion、两级 middle-90% consensus 与 mean-height scale。
+- package 与 repository `__init__.py`：re-export additive API。
 
-No module imports dataset, evaluation, experiment, visualization, or tracking
-owners. Functions are deterministic CPU NumPy operations.
+模块不 import dataset、tracking、evaluation、experiment 或 visualization owner；实现为
+deterministic CPU NumPy。
 
 ## Smoke-Test Standard
 
-Synthetic virtual-segment tests must close the analytic inverse against known
-`H/D`, without treating that closure as real-pose accuracy. Tests verify
-equal-person rather than equal-frame weighting, the exact tail-count rule, and
-rejection/removal for invalid geometry and insufficient per-person support. An
-articulated COCO-17 pose whose shoulder-to-ankle line differs from `K n`
-verifies the power-8 construction and corrected-bottom projection. The old
-registered offset baseline receives a
-regression test showing that its config and result are unchanged.
+synthetic virtual segment 必须闭合已知 `H/D`，同时明确这不证明 real-pose anthropometric
+accuracy。测试覆盖 equal-person weighting、tail count、退化 row 逐行失效、post-trim
+minimum、support masks、corrected bottom，以及旧 registered offset config 不变。
 
 ## Modification History
 
-- 2026-09-14: Initial mathematical and code architecture for implementation.
-- 2026-09-14: Mathematical review found no Critical issue and three Major
-  ambiguities. Defined the projective vertical line, virtual-upright meaning,
-  invalid/support masks, physical ray gates, retained-person prior semantics,
-  and overflow-safe power mean before implementation.
-- 2026-09-14: Code-architecture review identified the same corrected-bottom
-  blocker plus identity/support and skeleton-owner gaps. The vertical-line
-  correction is now explicit; the public API accepts named joints rather than
-  COCO slots, preserves the observation axis with a valid mask, and freezes
-  identity ordering and support configuration.
+- 2026-09-14：建立数学与 code architecture；专项 review 澄清 projective vertical、
+  virtual-upright 语义、identity/support 与 stable power mean。
+- 2026-09-15：最终 behavior review 补齐退化 row mask、post-trim minimum 与 result
+  cross-field invariants。

@@ -30,6 +30,7 @@ class Ground_Normal_Baseline(StrEnum):
 
 class Ground_Offset_Baseline(StrEnum):
     GROUND_OFFSET_BASELINE001 = 'ground_offset_baseline001'
+    GROUND_OFFSET_BASELINE002 = 'ground_offset_baseline002'
 
 
 class Ground_Normal_And_Camera_Baseline(StrEnum):
@@ -247,14 +248,21 @@ def ground_offset_config(
         ),
     ) -> Ground_Offset_Config:
     parsed = parse_ground_offset_baseline(baseline)
+    if parsed is Ground_Offset_Baseline.GROUND_OFFSET_BASELINE001:
+        values = (4.3, 0.20, 1.27, -5.0, 80.0, 0.1)
+    elif parsed is Ground_Offset_Baseline.GROUND_OFFSET_BASELINE002:
+        values = (2.1, 0.10, 1.22, -5.0, 80.0, 0.05)
+    else:
+        raise AssertionError('unhandled registered Ground Offset baseline')
+    confidence, ankle_ratio, height, distance_min, distance_max, distance_step = values
     instance = object.__new__(Ground_Offset_Config)
     object.__setattr__(instance, 'baseline', parsed)
-    object.__setattr__(instance, 'confidence_threshold_strict_gt', 4.3)
-    object.__setattr__(instance, 'ankle_ratio_threshold_strict_lt', 0.20)
-    object.__setattr__(instance, 'height_prior_m', 1.27)
-    object.__setattr__(instance, 'distance_min_m', -5.0)
-    object.__setattr__(instance, 'distance_max_m', 80.0)
-    object.__setattr__(instance, 'distance_step_m', 0.1)
+    object.__setattr__(instance, 'confidence_threshold_strict_gt', confidence)
+    object.__setattr__(instance, 'ankle_ratio_threshold_strict_lt', ankle_ratio)
+    object.__setattr__(instance, 'height_prior_m', height)
+    object.__setattr__(instance, 'distance_min_m', distance_min)
+    object.__setattr__(instance, 'distance_max_m', distance_max)
+    object.__setattr__(instance, 'distance_step_m', distance_step)
     return instance
 
 

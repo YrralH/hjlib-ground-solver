@@ -53,9 +53,22 @@ plane_camera = offset_result.plane_camera_abcd
 `ground_normal_config()`、`ground_offset_config()` 或
 `ground_normal_and_camera_config()` 查看 frozen config；不要在调用处复制数值。
 
-offset 使用 strict `confidence > 4.3`、strict `ankle_ratio < 0.20`、unweighted
-observations 与 `H_prior=1.27 m`。`select_ground_offset_observations(observations,
-ground_offset_config())` 可在求 D 前单独取得 full-length retained mask。
+默认 offset 使用 strict `confidence > 4.3`、strict `ankle_ratio < 0.20`、
+unweighted observations、`H_prior=1.27 m` 和 0.10 m D 步长。Ankle Plane A
+使用 `ground_offset_baseline002`：strict `confidence > 2.1`、strict
+`ankle_ratio < 0.10`、`H_prior=1.22 m` 和 0.05 m D 步长：
+
+```python
+offset_result = solve_ground_offset(
+    observations,
+    normal_result.ground_normal_camera,
+    intrinsics,
+    baseline='ground_offset_baseline002',
+)
+```
+
+`select_ground_offset_observations(observations, ground_offset_config(...))`
+可在求 D 前单独取得 full-length retained mask。
 
 | 你已有的输入 | 调用 |
 | --- | --- |
@@ -63,7 +76,8 @@ ground_offset_config())` 可在求 D 前单独取得 full-length retained mask�
 | top/bottom + confidence/ankle ratio + GN + K | `solve_ground_offset` |
 | line→VP，K 未知但 centered square-pixel | `solve_ground_normal_and_camera`，返回 K+GN |
 | 上述 K+GN 再加 person observations | 显式后接 `solve_ground_offset` |
-| 想自己调 H、filter 或 weighting | 使用低层研究入口，不得仍称 `ground_offset_baseline001` |
+| 使用已登记 Ankle Plane A offset | `solve_ground_offset(..., baseline='ground_offset_baseline002')` |
+| 想自己调 H、filter 或 weighting | 使用低层研究入口，不得仍称任一已登记 baseline |
 
 所有 pixel coordinates 必须与 K 处于同一个 uncropped image frame。GN 必须是 float64
 camera-up unit vector；offset 只提供绝对尺度所需的 fixed height prior，不是单目无先验

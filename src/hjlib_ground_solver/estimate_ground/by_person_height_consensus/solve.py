@@ -112,6 +112,14 @@ def solve_ground_offset_by_person_height_consensus(
         normal,
         config.geometry_epsilon,
     )
+    observation_valid = np.asarray(
+        observation_valid & measurements.measurement_valid_mask,
+        dtype=np.bool_,
+    )
+    observation_ratios = np.array(observation_ratios, dtype=np.float64, copy=True)
+    observation_ratios[~observation_valid] = np.nan
+    observation_ratios.setflags(write=False)
+    observation_valid.setflags(write=False)
     person_ids = np.unique(observations.person_ids)
     person_count = int(person_ids.size)
     valid_counts = np.zeros(person_count, dtype=np.int64)
@@ -137,6 +145,8 @@ def solve_ground_offset_by_person_height_consensus(
     )
     scene_retained = np.zeros(person_count, dtype=np.bool_)
     scene_retained[np.flatnonzero(eligible)[eligible_scene_mask]] = True
+    if int(np.count_nonzero(scene_retained)) < config.minimum_retained_person_count:
+        raise ValueError('insufficient people after scene trimming')
     distance = mean_height / scene_ratio
     if not math.isfinite(distance) or distance <= 0.0:
         raise ValueError('solved ground offset must be finite and positive')

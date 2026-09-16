@@ -92,6 +92,19 @@ def test_middle90_and_support_masks() -> None:
     assert result.person_eligible_mask.tolist() == [True, False]
     assert result.scene_person_retained_mask.tolist() == [True, False]
 
+    try:
+        solve_ground_offset_by_person_height_consensus(
+            observations([0, 1, 2], [0, 0, 0], [0.2, 0.3, 0.4]),
+            NORMAL,
+            K,
+            1.2,
+            Person_Height_Consensus_Config(0.49, 1, 3),
+        )
+    except ValueError as error:
+        assert 'after scene trimming' in str(error)
+    else:
+        raise AssertionError('post-trim support minimum must be enforced')
+
 
 def test_corrected_bottom_uses_projective_vertical() -> None:
     pose = pose_for_ratio(0.2, 500.0)
@@ -112,7 +125,26 @@ def test_corrected_bottom_uses_projective_vertical() -> None:
 
 
 def test_invalid_geometry_and_old_baseline_regression() -> None:
-    value = observations([0], [0], [0.2])
+    value = observations([0, 0], [0, 1], [0.2, 0.2])
+    degenerate = np.zeros((2, 2), dtype=np.float64)
+    value = Person_Height_Consensus_Observations(
+        value.person_ids,
+        value.frame_indices,
+        np.stack((value.shoulder_xy_px[0], degenerate)),
+        np.stack((value.hip_xy_px[0], degenerate)),
+        np.stack((value.knee_xy_px[0], degenerate)),
+        np.stack((value.ankle_xy_px[0], degenerate)),
+    )
+    result = solve_ground_offset_by_person_height_consensus(
+        value,
+        NORMAL,
+        K,
+        1.2,
+        Person_Height_Consensus_Config(0.05, 1, 1),
+    )
+    assert result.measurements.measurement_valid_mask.tolist() == [True, False]
+    assert result.observation_valid_mask.tolist() == [True, False]
+    assert np.isnan(result.observation_height_over_offset[1])
     try:
         solve_ground_offset_by_person_height_consensus(
             value,

@@ -11,6 +11,7 @@
 - [vanishing_direction_ground_normal.md](vanishing_direction_ground_normal.md)：从 line→VP sources 或 upright-person lines 求 locally-horizontal camera-space Ground Normal。
 - [ours_ground_baselines.md](ours_ground_baselines.md)：按 frozen Ours Ground baseline 分别求 GN、offset D，或在 centered square-pixel 假设下联合求 camera+GN。
 - [person_ankle_plane_distribution.md](person_ankle_plane_distribution.md)：**暂时废弃的 V1**；仅供历史结果复现与 regression，不作为当前 ankle-ground 方法入口。
+- [person_height_consensus_ground_offset.md](person_height_consensus_ground_offset.md)：从具名 2D pose 时序、K、给定 GN 与场景平均 equivalent-height prior 求 identity-aware Ankle Plane offset。
 - 其余 ground solver 入口按输入类型列在本页。
 
 ## 决策树：我有什么 → 调哪个
@@ -24,7 +25,12 @@
                                       + observation_weights=...
        内部链路: get_KN_with_filter -> solve_D_search
                  (底层可单独调: get_KN / get_bias_from_2D_ground_normal /
-                  get_projection_loss / uv_to_xyz_via_ground_torch)
+                 get_projection_loss / uv_to_xyz_via_ground_torch)
+
+我有按 identity 排列的 shoulder/hip/knee/ankle 2D observations + K + 已估 GN
+    └─ solve_ground_offset_by_person_height_consensus
+       -> power-8 I-Pose + corrected bottom + per-person/scene H/D consensus + Ankle Plane
+       (population/confidence selection 和场景 mean-height calibration 由 caller 完成)
 
 我有 line→VP，K 未知但 fx=fy/光心居中
     └─ solve_ground_normal_and_camera
@@ -135,6 +141,7 @@
 | upright-person top/bottom pixels + weights + K | `fit_person_vertical_direction_evidence` | checked one-VP source + direction receipt |
 | one line→VP source + K, frozen Ours Ground method | `solve_ground_normal` | registered config + simple-probe receipt + camera-up unit GN |
 | top/bottom/confidence/ankle ratio + GN + K | `solve_ground_offset` | registered selection receipt + float64 camera-frame plane |
+| named bilateral pose observations + person/frame IDs + GN + K + mean height | `solve_ground_offset_by_person_height_consensus` | full observation/person ledger + camera-frame Ankle Plane |
 | line→VP，centered square-pixel K 未知 | `solve_ground_normal_and_camera` | registered camera receipt + camera-up GN |
 
 ## 公共契约

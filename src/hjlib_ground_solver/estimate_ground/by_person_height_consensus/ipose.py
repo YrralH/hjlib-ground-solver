@@ -1,5 +1,7 @@
 '''Power-8 I-Pose measurements under a supplied projective vertical.'''
 
+import math
+
 import numpy as np
 
 from hjlib_ground_solver.estimate_ground.by_person_height_consensus.contract import (
@@ -41,7 +43,11 @@ def compute_power8_ipose_measurements(
     '''Measure virtual-upright image height without applying population filters.'''
     if type(observations) is not Person_Height_Consensus_Observations:
         raise TypeError('observations must be Person_Height_Consensus_Observations')
-    if type(geometry_epsilon) is not float or geometry_epsilon <= 0.0:
+    if (
+            type(geometry_epsilon) is not float
+            or not math.isfinite(geometry_epsilon)
+            or geometry_epsilon <= 0.0
+        ):
         raise ValueError('geometry_epsilon must be a positive float')
     matrix = validated_intrinsics_matrix(camera_intrinsics)
     normal = validated_camera_up_normal(ground_normal_camera)
@@ -69,33 +75,45 @@ def compute_power8_ipose_measurements(
         )
     )
     heights = torso + stable_power8_mean(left_leg, right_leg)
-    if bool(np.any(~np.isfinite(heights))) or bool(np.any(heights <= geometry_epsilon)):
-        raise ValueError('power-8 I-Pose heights must be finite and positive')
 
     vanishing = matrix @ normal
     directions = vanishing[:2][None, :] - shoulders * vanishing[2]
     direction_norms = np.linalg.norm(directions, axis=1)
-    if bool(np.any(direction_norms <= geometry_epsilon)):
-        raise ValueError('projective vertical direction is undefined at a shoulder')
-    directions = directions / direction_norms[:, None]
+    valid = (
+        np.isfinite(heights)
+        & (heights > geometry_epsilon)
+        & np.isfinite(direction_norms)
+        & (direction_norms > geometry_epsilon)
+    )
+    normalized_directions = np.full_like(directions, np.nan)
+    np.divide(
+        directions,
+        direction_norms[:, None],
+        out=normalized_directions,
+        where=valid[:, None],
+    )
     ankle_midpoints = np.mean(observations.ankle_xy_px, axis=1)
-    orientation = np.sum((ankle_midpoints - shoulders) * directions, axis=1)
-    directions[orientation < 0.0] *= -1.0
+    orientation = np.sum(
+        (ankle_midpoints - shoulders) * normalized_directions, axis=1)
+    normalized_directions[orientation < 0.0] *= -1.0
     projection_scalars = np.sum(
         (observations.ankle_xy_px - shoulders[:, None, :])
-        * directions[:, None, :],
+        * normalized_directions[:, None, :],
         axis=2,
     )
     projected_ankles = (
         shoulders[:, None, :]
-        + projection_scalars[:, :, None] * directions[:, None, :]
+        + projection_scalars[:, :, None] * normalized_directions[:, None, :]
     )
     bottoms = np.mean(projected_ankles, axis=1)
+    valid_heights = np.asarray(heights, dtype=np.float64)
+    valid_heights[~valid] = np.nan
     return Power8_IPose_Measurements(
         np.asarray(shoulders, dtype=np.float64),
-        np.asarray(directions, dtype=np.float64),
+        np.asarray(normalized_directions, dtype=np.float64),
         np.asarray(bottoms, dtype=np.float64),
-        np.asarray(heights, dtype=np.float64),
+        valid_heights,
+        np.asarray(valid, dtype=np.bool_),
     )
 
 

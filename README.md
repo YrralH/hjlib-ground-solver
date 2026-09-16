@@ -17,8 +17,11 @@ transform / by_param 等已知地面后的操作）在 hjlib-geometry；本仓�
 Lower-envelope / static-foot candidate 只是观测统计；另有显式标为
 `hj_derived_nonofficial` 的 plantar-zmin 地面高度代理，均不声称官方 ground truth。
 本仓暂时保留已废弃的 dataset-neutral per-person ankle-plane V1 inference，
-仅用于历史 provenance 与 regression；它不是当前可继续扩展的方法。当前唯一 active
-路线住在 `hjlib-dataset-std` Campaign 02，从 temporal low-basin proposal 开始。
+仅用于历史 provenance 与 regression；它不是当前可继续扩展的方法。GT reference
+构造路线住在 `hjlib-dataset-std` Campaign 02。实验性的 Ground Offset 路线
+`solve_ground_offset_by_person_height_consensus` 从具名 2D joints、K、给定 GN 与场景
+平均 equivalent-height prior 求解 Ankle Plane；其 V1 method definition 当前 incomplete，
+修复前不要使用。代码仅保留历史诊断与后续 redesign 的实现基础，不影响旧 Ours baseline。
 
 ## 安装
 
@@ -53,6 +56,8 @@ assert objective >= 0.0
 
 若要先把密集重复观测的贡献压平，见
 [density_balanced_rcr.md](docs/usage/density_balanced_rcr.md)。
+若要审阅当前 incomplete 的 identity-aware V1 历史实现，见
+[person_height_consensus_ground_offset.md](docs/usage/person_height_consensus_ground_offset.md)。
 
 ## 文档
 

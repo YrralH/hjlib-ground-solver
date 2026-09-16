@@ -3,8 +3,9 @@
 本仓**唯一** onboarding 入口（无 `docs/CLAUDE.md`）。改本仓前先读这里。
 
 > `estimate_ground/person_ankle_plane/` 的 distribution-first V1 已暂时废弃并冻结，
-> 只保留历史实现和 regression。当前 ankle-ground 方法不在本仓沿 V1 继续开发；唯一
-> active 路线见 `hjlib-dataset-std` Campaign 02 的 temporal low-basin/getG task。
+> 只保留历史实现和 regression。GT reference 构造继续由 `hjlib-dataset-std`
+> Campaign 02 拥有；新的 identity-aware 2D person-height consensus Ground Offset
+> 是本仓独立的平行 solver，见 [person_height_consensus_ground_offset.md](person_height_consensus_ground_offset.md)。
 
 ## 1. Scope
 
@@ -57,6 +58,7 @@ hjlib-ground-solver/
 │   │   └── get_3d_info_from_hvip_2d.py     2D HVIP + RT/K -> 3D world HVIP + 地面 (含 solve)
 │   └── estimate_ground/
 │       ├── person_ankle_plane/                per-person local clusters -> global height hypotheses -> typed status
+│       ├── by_person_height_consensus/         named 2D pose -> per-person H/D consensus -> Ankle Plane offset
 │       ├── observation_density.py              provisional-plane exact-LOO KDE / kNN density + immutable weight evidence
 │       ├── by_mesh_lower_envelope.py        full-mesh per-frame minima + exact coverage candidates
 │       ├── by_mesh_lower_envelope_peeling.py iterative separated low-prefix peeling
@@ -94,6 +96,8 @@ hjlib-ground-solver/
 8. [dataset-std task: person ankle-plane distribution V1](../../../hjlib-dataset-std/docs/design/tasks/person_ankle_plane_distribution/README.md)
    —— 已迁移的 failed predecessor task design history、数学契约与测试标准；本仓暂留
    V1 实现，待 replacement design 后统一清理。
+9. [person_height_consensus_ground_offset.md](person_height_consensus_ground_offset.md)
+   —— power-8 I-Pose、corrected bottom、两级 middle-90% 聚合与 scale-prior 边界。
 
 ## 4. 关键设计点
 
@@ -138,7 +142,7 @@ ladder level 3，根因与处理标准见
 ## 6. State of the world
 
 - pyright: **strict, 0 errors**（见 §5 的规则豁免）。
-- 测试: `test_smoke/` **142 passed**；`get_ground_by_smpls_on_the_ground`
+- 测试: `test_smoke/` **146 passed**；`get_ground_by_smpls_on_the_ground`
   需真实 SMPL 模型，留给数据依赖测试（见 [test.md](test.md)）。
 - density/weighted RCR：公开 API、immutable evidence 与 synthetic hand-oracle
   smoke 已实现；VirtualCrowd real operation 由 `hjlib-evaluation` 持有。
@@ -147,6 +151,9 @@ ladder level 3，根因与处理标准见
   focused mathematical tests 已实现并通过专项 review。Campaign 06 的首轮
   common-grid application 因 single-run recurrence identifiability 返回
   `method_indeterminate`；这不改变 API 的 typed non-candidate behavior。
+- person-height consensus Ground Offset：具名 2D joint contract、power-8 I-Pose、
+  corrected bottom、逐人和逐场景 middle-90% aggregation 已实现；VirtualCrowd 的
+  population selection、height calibration 与评估留在 `hjlib-experiments`。
 - **Ground Normal from vanishing-direction evidence**: robust interpretation is implemented and reviewed
   at [`tasks/vanishing_direction_ground_normal/`](tasks/vanishing_direction_ground_normal/);
   single-source/discrete/role-aware interpretations plus person-line evidence
@@ -167,9 +174,10 @@ ladder level 3，根因与处理标准见
 
 ## 7. What's open
 
-- **Ours Ground continuation**: the identity-aware offset experiment remains
-  pending and must reuse the frozen selection seam without changing
-  `ground_offset_baseline001`.
+- **Ours Ground continuation**: identity-aware person-height consensus 已作为平行
+  solver 实现并完成首轮 VirtualCrowd 实验；其 Test6 结果尚未通过方法晋升审查。
+  独立完成审查的 Ankle Plane A 已新增为 `ground_offset_baseline002`；
+  `ground_offset_baseline001` 保持不变。
 
 - **AMASS mesh lower-envelope task**: the implemented/reviewed Layered Design residence is
   [`tasks/amass-ground-zmin-family/`](tasks/amass-ground-zmin-family/). It owns

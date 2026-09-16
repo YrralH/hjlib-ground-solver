@@ -98,11 +98,12 @@ def make_direction_source(
 def make_offset_observations(
         normal:NDArray[np.float64],
         distance:float = 4.0,
+        height:float = 1.27,
     ) -> Ground_Offset_Observations:
     xz = np.array([[-2.0, 20.0], [0.0, 25.0], [2.0, 30.0]])
     y = (-distance - normal[0] * xz[:, 0] - normal[2] * xz[:, 1]) / normal[1]
     bottoms_3d = np.stack((xz[:, 0], y, xz[:, 1]), axis=1)
-    tops_3d = bottoms_3d + 1.27 * normal[None]
+    tops_3d = bottoms_3d + height * normal[None]
     intrinsics = make_intrinsics()
     bottom_xy, _ = intrinsics.project_points_in_camera_frame(bottoms_3d)
     top_xy, _ = intrinsics.project_points_in_camera_frame(tops_3d)
@@ -110,7 +111,7 @@ def make_offset_observations(
         top_xy,
         bottom_xy,
         np.full((3,), 5.0),
-        np.full((3,), 0.1),
+        np.full((3,), 0.09),
     )
 
 
@@ -131,6 +132,16 @@ def test_registered_configs_are_exact_and_unknown_ids_fail() -> None:
     assert (offset.distance_min_m, offset.distance_max_m, offset.distance_step_m) == (
         -5.0, 80.0, 0.1,
     )
+    ankle_plane = ground_offset_config('ground_offset_baseline002')
+    assert ankle_plane.baseline.value == 'ground_offset_baseline002'
+    assert ankle_plane.confidence_threshold_strict_gt == 2.1
+    assert ankle_plane.ankle_ratio_threshold_strict_lt == 0.10
+    assert ankle_plane.height_prior_m == 1.22
+    assert (
+        ankle_plane.distance_min_m,
+        ankle_plane.distance_max_m,
+        ankle_plane.distance_step_m,
+    ) == (-5.0, 80.0, 0.05)
     camera = ground_normal_and_camera_config()
     assert camera.baseline.value == 'ground_normal_and_camera_baseline001'
     assert camera.camera_solver_config.vertical_config == normal.camera_solver_config
@@ -138,8 +149,10 @@ def test_registered_configs_are_exact_and_unknown_ids_fail() -> None:
     assert camera.camera_solver_config.maximum_focal_refit_iterations == 20
     with pytest.raises(ValueError, match='legal values'):
         ground_normal_config('unknown')
-    with pytest.raises(ValueError, match='legal values'):
+    with pytest.raises(ValueError, match='legal values') as offset_error:
         ground_offset_config('unknown')
+    assert 'ground_offset_baseline001' in str(offset_error.value)
+    assert 'ground_offset_baseline002' in str(offset_error.value)
     with pytest.raises(ValueError, match='legal values'):
         ground_normal_and_camera_config('unknown')
 
@@ -172,6 +185,20 @@ def test_ground_offset_selection_is_strict_bound_and_immutable() -> None:
     assert selection.observations is observations
     assert selection.config is config
     assert not selection.retained_mask.flags.writeable
+    ankle_plane_observations = Ground_Offset_Observations(
+        np.array([[1.0, 1.0], [2.0, 2.0], [3.0, 3.0], [4.0, 4.0], [5.0, 5.0]]),
+        np.zeros((5, 2)),
+        np.array([2.11, 3.0, 4.0, 2.1, 5.0]),
+        np.array([0.09, 0.05, 0.00, 0.05, 0.10]),
+    )
+    ankle_plane_selection = select_ground_offset_observations(
+        ankle_plane_observations,
+        ground_offset_config('ground_offset_baseline002'),
+    )
+    np.testing.assert_array_equal(
+        ankle_plane_selection.retained_mask,
+        [True, True, True, False, False],
+    )
     assert not observations.top_xy_px.flags.writeable
     with pytest.raises(TypeError, match='constructed by'):
         Ground_Offset_Config()
@@ -191,6 +218,20 @@ def test_ground_offset_preserves_float64_normal_and_solves_positive_D() -> None:
     assert result.plane_camera_abcd[3] > 0.0
     assert np.isfinite(result.objective)
     assert not result.plane_camera_abcd.flags.writeable
+
+
+def test_ankle_plane_ground_offset_baseline_solves_with_its_height() -> None:
+    normal = unit(np.array([0.001234567890123, -0.992345678901234, 0.123456789012345]))
+    observations = make_offset_observations(normal, height=1.22)
+    result = solve_ground_offset(
+        observations,
+        normal,
+        make_intrinsics(),
+        'ground_offset_baseline002',
+    )
+    assert result.selection.config == ground_offset_config(
+        'ground_offset_baseline002')
+    assert result.plane_camera_abcd[3] == pytest.approx(4.0, abs=0.026)
 
 
 def test_low_level_preserve_flag_is_opt_in_and_backward_compatible() -> None:
@@ -280,6 +321,7 @@ def smoke_test_ours_ground_baselines() -> None:
     test_ground_normal_baseline_owns_exact_camera_up_result()
     test_ground_offset_selection_is_strict_bound_and_immutable()
     test_ground_offset_preserves_float64_normal_and_solves_positive_D()
+    test_ankle_plane_ground_offset_baseline_solves_with_its_height()
     test_low_level_preserve_flag_is_opt_in_and_backward_compatible()
     test_ground_offset_rejects_bad_support_and_nonpositive_winner()
     test_ground_normal_and_camera_then_explicit_offset()

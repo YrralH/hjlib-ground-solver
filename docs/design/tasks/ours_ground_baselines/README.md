@@ -26,12 +26,14 @@ part of this task.
 
 ## Public Identity And Sign Contract
 
-The stable IDs are:
+The stable IDs introduced by this task were:
 
 - `ground_normal_baseline001`;
 - `ground_offset_baseline001`.
 
-Both calls default to their sole registered baseline. Separate
+Both calls retain baseline001 as their default. Offset baseline002 was added
+later by the parallel
+[Ankle Plane task](../ankle_plane_ground_offset_baseline/README.md). Separate
 `ground_normal_config` and `ground_offset_config` calls expose the frozen
 configuration without executing a solver. Unknown names raise and list the
 legal values.
