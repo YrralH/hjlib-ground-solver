@@ -34,6 +34,6 @@ description_updated = '2026-08-25'
 # camera-solver owns robust VP direction fusion; camera supplies the public K type.
 # skeleton / vis-2d remain transitive via hjlib-smpl; NOT declared directly here.
 hjlib-camera = { path = '../hjlib-camera', commit = 'a0071f8cc045d759f9c649f472ed198c2d61d04e' }
-hjlib-camera-solver = { path = '../hjlib-camera-solver', commit = "b8c0b5e5822178877aaf0b653eb7015f6c18f452" }
-hjlib-geometry = { path = '../hjlib-geometry', commit = "1aa8789667fcab20fedd3acff15beb8267b5c558" }
-hjlib-smpl = { path = '../hjlib-smpl', commit = "75698c100b88b80913c7f9711a9afb380fa4bea7" }
+hjlib-camera-solver = { path = '../hjlib-camera-solver', commit = "d5a2b0a83c93a2d4b67360d20714ace58c0be55e" }
+hjlib-geometry = { path = '../hjlib-geometry', commit = "cd6a2779d988f9a355057ec10a920bc5cfbb5801" }
+hjlib-smpl = { path = '../hjlib-smpl', commit = "5e0883d7ccaaa9106de1095f4cc72d2cfab6cded" }
