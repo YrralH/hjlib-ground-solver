@@ -13,8 +13,9 @@ registered composition:
   square-pixel intrinsics and GN; it does not estimate plane offset.
 
 Their stable IDs are `ground_normal_baseline001`,
-`ground_offset_baseline001`, `ground_offset_baseline002` and
-`ground_normal_and_camera_baseline001`. Config constructors expose the frozen values;
+`ground_normal_baseline002`, `ground_offset_baseline001`,
+`ground_offset_baseline002`, `ground_normal_and_camera_baseline001` and
+`ground_normal_and_camera_baseline002`. Config constructors expose the frozen values;
 unknown IDs fail and list legal values. `hjlib-experiments` directly re-exports
 these owner objects and does not contain a second numeric registry.
 
@@ -24,6 +25,11 @@ GN composes the camera-solver exact simple vertical-VP probe with support `5`,
 minimum absolute camera-y `0.8`, orthogonality tolerance `3°`, iterative native
 pixel residual gate `0.25 px`, retained support `5` and at most `20` refits.
 It deliberately has neither VP deduplication nor ground-direction diversity.
+
+GN baseline002 keeps every GN baseline001 value except the refit gate: it uses
+the camera-solver direction-gated config, keeping a winner line while its
+direction misalignment `asin(2r/L)` to the refitted VP is below `0.15°`
+instead of its native-pixel residual being below `0.25 px`.
 
 Both Offset baselines use equal observation weights and the existing D
 objective. Their frozen selections are:
@@ -38,7 +44,11 @@ Baseline002 is the accepted VirtualCrowd Ankle Plane A offset configuration.
 
 Normal-and-camera baseline001 uses the camera-solver centered-focal vertical anchor with
 the same `5 / 0.8 / 3° / 0.25 px / 5 / 20` vertical thresholds, at least two
-informative focal neighbors and at most 20 focal-membership refits. Person
+informative focal neighbors and at most 20 focal-membership refits.
+Normal-and-camera baseline002 is identical except that its vertical config is
+GN baseline002's (`0.15°` direction gate); because the centered-focal solver
+refits every candidate before ranking, the gate can change its selected anchor
+and focal, not only the final direction. Person
 filters, height prior and D search remain exclusively in a named
 `ground_offset_baseline*`, which callers invoke explicitly afterward.
 

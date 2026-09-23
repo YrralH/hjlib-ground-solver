@@ -177,7 +177,8 @@ ladder level 3，根因与处理标准见
 - **Ours Ground continuation**: identity-aware person-height consensus 已作为平行
   solver 实现并完成首轮 VirtualCrowd 实验；其 Test6 结果尚未通过方法晋升审查。
   独立完成审查的 Ankle Plane A 已新增为 `ground_offset_baseline002`；
-  `ground_offset_baseline001` 保持不变。
+  `ground_offset_baseline001` 保持不变。GN 与 GN+camera 各新增 baseline002（`0.15°`
+  方向门限代替 `0.25 px` 像素门限），baseline001 保持不变。
 
 - **AMASS mesh lower-envelope task**: the implemented/reviewed Layered Design residence is
   [`tasks/amass-ground-zmin-family/`](tasks/amass-ground-zmin-family/). It owns

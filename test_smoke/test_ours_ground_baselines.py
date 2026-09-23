@@ -7,7 +7,10 @@ from typing import cast
 
 from hjlib_camera import Camera_Intrinsics
 from hjlib_camera_solver import (
+    Centered_Focal_Vertical_VP_Config,
+    Direction_Gated_Vertical_VP_Config,
     Image_Line_Segments,
+    Simple_Vertical_VP_Config,
     Vanishing_Direction_Source,
     Vanishing_Point_Association,
 )
@@ -118,12 +121,14 @@ def make_offset_observations(
 def test_registered_configs_are_exact_and_unknown_ids_fail() -> None:
     normal = ground_normal_config()
     assert normal.baseline.value == 'ground_normal_baseline001'
-    assert normal.camera_solver_config.minimum_cluster_support == 5
-    assert normal.camera_solver_config.minimum_abs_camera_y == 0.8
-    assert normal.camera_solver_config.orthogonality_tolerance_deg == 3.0
-    assert normal.camera_solver_config.residual_gate_px == 0.25
-    assert normal.camera_solver_config.minimum_retained_support == 5
-    assert normal.camera_solver_config.maximum_refit_iterations == 20
+    assert normal.camera_solver_config == Simple_Vertical_VP_Config(
+        minimum_cluster_support=5,
+        minimum_abs_camera_y=0.8,
+        orthogonality_tolerance_deg=3.0,
+        residual_gate_px=0.25,
+        minimum_retained_support=5,
+        maximum_refit_iterations=20,
+    )
     offset = ground_offset_config()
     assert offset.baseline.value == 'ground_offset_baseline001'
     assert offset.confidence_threshold_strict_gt == 4.3
@@ -155,6 +160,46 @@ def test_registered_configs_are_exact_and_unknown_ids_fail() -> None:
     assert 'ground_offset_baseline002' in str(offset_error.value)
     with pytest.raises(ValueError, match='legal values'):
         ground_normal_and_camera_config('unknown')
+
+
+def test_direction_gated_baseline002_configs_are_exact() -> None:
+    expected_vertical = Direction_Gated_Vertical_VP_Config(
+        minimum_cluster_support=5,
+        minimum_abs_camera_y=0.8,
+        orthogonality_tolerance_deg=3.0,
+        residual_gate_deg=0.15,
+        minimum_retained_support=5,
+        maximum_refit_iterations=20,
+    )
+    normal = ground_normal_config('ground_normal_baseline002')
+    assert normal.baseline.value == 'ground_normal_baseline002'
+    assert normal.camera_solver_config == expected_vertical
+    camera = ground_normal_and_camera_config('ground_normal_and_camera_baseline002')
+    assert camera.baseline.value == 'ground_normal_and_camera_baseline002'
+    assert camera.camera_solver_config == Centered_Focal_Vertical_VP_Config(
+        vertical_config=expected_vertical,
+        minimum_orthogonal_neighbor_count=2,
+        maximum_focal_refit_iterations=20,
+    )
+    # Baseline001 stays pixel-gated after the new ID is added.
+    assert type(ground_normal_config().camera_solver_config) is Simple_Vertical_VP_Config
+    assert type(
+        ground_normal_and_camera_config().camera_solver_config.vertical_config,
+    ) is Simple_Vertical_VP_Config
+    with pytest.raises(ValueError, match='legal values') as normal_error:
+        ground_normal_config('unknown')
+    assert 'ground_normal_baseline002' in str(normal_error.value)
+    with pytest.raises(ValueError, match='legal values') as camera_error:
+        ground_normal_and_camera_config('unknown')
+    assert 'ground_normal_and_camera_baseline002' in str(camera_error.value)
+
+
+def test_ground_normal_baseline002_solves_exact_source() -> None:
+    source, expected = make_direction_source()
+    result = solve_ground_normal(source, make_intrinsics(), 'ground_normal_baseline002')
+    assert result.config.baseline.value == 'ground_normal_baseline002'
+    assert type(result.direction_result.config) is Direction_Gated_Vertical_VP_Config
+    np.testing.assert_allclose(result.ground_normal_camera, expected, atol=1e-12)
 
 
 def test_ground_normal_baseline_owns_exact_camera_up_result() -> None:
@@ -317,6 +362,8 @@ def test_ground_normal_and_camera_closed_constructors_and_no_aliases() -> None:
 
 
 def smoke_test_ours_ground_baselines() -> None:
+    test_direction_gated_baseline002_configs_are_exact()
+    test_ground_normal_baseline002_solves_exact_source()
     test_registered_configs_are_exact_and_unknown_ids_fail()
     test_ground_normal_baseline_owns_exact_camera_up_result()
     test_ground_offset_selection_is_strict_bound_and_immutable()

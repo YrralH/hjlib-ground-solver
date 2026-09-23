@@ -13,9 +13,11 @@ from hjlib_camera import Camera_Intrinsics
 from hjlib_camera_solver import (
     Centered_Focal_Vertical_VP_Config,
     Centered_Focal_Vertical_VP_Result,
+    Direction_Gated_Vertical_VP_Config,
     Simple_Vertical_VP_Config,
     Simple_Vertical_VP_Result,
     Vanishing_Direction_Source,
+    Vertical_VP_Config,
     select_and_refit_vertical_vp_by_simple_orthogonal_support,
     solve_centered_focal_and_vertical_vp_by_orthogonal_support,
 )
@@ -26,6 +28,7 @@ from hjlib_ground_solver.estimate_ground.by_kp_rcr.solve_by_top_bot.search_D imp
 
 class Ground_Normal_Baseline(StrEnum):
     GROUND_NORMAL_BASELINE001 = 'ground_normal_baseline001'
+    GROUND_NORMAL_BASELINE002 = 'ground_normal_baseline002'
 
 
 class Ground_Offset_Baseline(StrEnum):
@@ -35,12 +38,13 @@ class Ground_Offset_Baseline(StrEnum):
 
 class Ground_Normal_And_Camera_Baseline(StrEnum):
     GROUND_NORMAL_AND_CAMERA_BASELINE001 = 'ground_normal_and_camera_baseline001'
+    GROUND_NORMAL_AND_CAMERA_BASELINE002 = 'ground_normal_and_camera_baseline002'
 
 
 @dataclass(frozen=True, slots=True, init=False)
 class Ground_Normal_Config:
     baseline:Ground_Normal_Baseline
-    camera_solver_config:Simple_Vertical_VP_Config
+    camera_solver_config:Vertical_VP_Config
 
     def __init__(self) -> None:
         raise TypeError('Ground_Normal_Config is constructed by ground_normal_config')
@@ -201,20 +205,30 @@ def ground_normal_config(
         ),
     ) -> Ground_Normal_Config:
     parsed = parse_ground_normal_baseline(baseline)
-    instance = object.__new__(Ground_Normal_Config)
-    object.__setattr__(instance, 'baseline', parsed)
-    object.__setattr__(
-        instance,
-        'camera_solver_config',
-        Simple_Vertical_VP_Config(
+    camera_solver_config:Vertical_VP_Config
+    if parsed is Ground_Normal_Baseline.GROUND_NORMAL_BASELINE001:
+        camera_solver_config = Simple_Vertical_VP_Config(
             minimum_cluster_support=5,
             minimum_abs_camera_y=0.8,
             orthogonality_tolerance_deg=3.0,
             residual_gate_px=0.25,
             minimum_retained_support=5,
             maximum_refit_iterations=20,
-        ),
-    )
+        )
+    elif parsed is Ground_Normal_Baseline.GROUND_NORMAL_BASELINE002:
+        camera_solver_config = Direction_Gated_Vertical_VP_Config(
+            minimum_cluster_support=5,
+            minimum_abs_camera_y=0.8,
+            orthogonality_tolerance_deg=3.0,
+            residual_gate_deg=0.15,
+            minimum_retained_support=5,
+            maximum_refit_iterations=20,
+        )
+    else:
+        raise AssertionError('unhandled registered Ground Normal baseline')
+    instance = object.__new__(Ground_Normal_Config)
+    object.__setattr__(instance, 'baseline', parsed)
+    object.__setattr__(instance, 'camera_solver_config', camera_solver_config)
     return instance
 
 
@@ -272,13 +286,19 @@ def ground_normal_and_camera_config(
         ),
     ) -> Ground_Normal_And_Camera_Config:
     parsed = parse_ground_normal_and_camera_baseline(baseline)
+    if parsed is Ground_Normal_And_Camera_Baseline.GROUND_NORMAL_AND_CAMERA_BASELINE001:
+        vertical_baseline = Ground_Normal_Baseline.GROUND_NORMAL_BASELINE001
+    elif parsed is Ground_Normal_And_Camera_Baseline.GROUND_NORMAL_AND_CAMERA_BASELINE002:
+        vertical_baseline = Ground_Normal_Baseline.GROUND_NORMAL_BASELINE002
+    else:
+        raise AssertionError('unhandled registered Ground Normal and camera baseline')
     instance = object.__new__(Ground_Normal_And_Camera_Config)
     object.__setattr__(instance, 'baseline', parsed)
     object.__setattr__(
         instance,
         'camera_solver_config',
         Centered_Focal_Vertical_VP_Config(
-            vertical_config=ground_normal_config().camera_solver_config,
+            vertical_config=ground_normal_config(vertical_baseline).camera_solver_config,
             minimum_orthogonal_neighbor_count=2,
             maximum_focal_refit_iterations=20,
         ),

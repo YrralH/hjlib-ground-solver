@@ -49,7 +49,17 @@ plane_camera = offset_result.plane_camera_abcd
 ```
 
 三个入口的默认 ID 分别是 `ground_normal_baseline001`、
-`ground_offset_baseline001` 与 `ground_normal_and_camera_baseline001`。可先调用
+`ground_offset_baseline001` 与 `ground_normal_and_camera_baseline001`。
+`ground_normal_baseline002` 与 `ground_normal_and_camera_baseline002` 只把 refit 门限
+从 `0.25 px` 残差换成 `0.15°` 线段方向偏差，其余数值相同：
+
+```python
+normal_result = solve_ground_normal(
+    line_vp_source, intrinsics, 'ground_normal_baseline002')
+camera_normal_result = solve_ground_normal_and_camera(
+    line_vp_source, 'ground_normal_and_camera_baseline002')
+```
+可先调用
 `ground_normal_config()`、`ground_offset_config()` 或
 `ground_normal_and_camera_config()` 查看 frozen config；不要在调用处复制数值。
 
