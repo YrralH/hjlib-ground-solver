@@ -33,7 +33,7 @@ description_updated = '2026-08-25'
 #   get_2d_torso_center_from_2d_joint).
 # camera-solver owns robust VP direction fusion; camera supplies the public K type.
 # skeleton / vis-2d remain transitive via hjlib-smpl; NOT declared directly here.
-hjlib-camera = { path = '../hjlib-camera', commit = "14d336b3ae7821b5739b57db846a4b474c53ebdc" }
-hjlib-camera-solver = { path = '../hjlib-camera-solver', commit = "24893e8dae241457c991311ee047317eb77448df" }
-hjlib-geometry = { path = '../hjlib-geometry', commit = "ea56bf8b001daa871defddf5e1d717fee3c8cd4c" }
-hjlib-smpl = { path = '../hjlib-smpl', commit = "7c31a5711380ff2cf3939e93b6f484cbe4dbad39" }
+hjlib-camera = { path = '../hjlib-camera', commit = "e936c5538b575b54e629402c4dc590d130be7b8b" }
+hjlib-camera-solver = { path = '../hjlib-camera-solver', commit = "8c8215f2d38a6381accc57bf49f8e5ce7f50a8a0" }
+hjlib-geometry = { path = '../hjlib-geometry', commit = "26da454a2d2b2a9decddfd560b0b19317fc2b625" }
+hjlib-smpl = { path = '../hjlib-smpl', commit = "a92715777062e2e83c1e23b8156eb567452c0477" }
